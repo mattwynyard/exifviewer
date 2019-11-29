@@ -1,0 +1,35 @@
+body {
+  margin: 0px;
+  width: 100vw;
+  height: 90vh;
+  /* background-color: white; */
+}
+
+#root {
+  height: 100%;
+}
+
+.map {
+  height: 100%;
+}
+
+.navbar {
+  margin-bottom: 0;
+  
+  border: 0;
+  font-size: 18px !important;
+  line-height: 1.5 !important;
+  letter-spacing: 5px;
+  border-radius: 0;
+}
+
+ .navbarbrand {
+  background-color: transparent;
+  color: #fff;
+}
+
+.footer {
+  height: 10vh;
+}
+
+
