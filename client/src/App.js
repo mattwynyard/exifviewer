@@ -41,7 +41,7 @@ class App extends Component {
 
   
   async loadLayer(e) {
-    await fetch('http://localhost:5000/api', {
+    await fetch('http://localhost:5000/layer', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
