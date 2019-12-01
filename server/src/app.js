@@ -31,8 +31,9 @@ app.get('/api', (req, res) => {
 app.post('/layer', (req, res, next) => {
   var layer = req.body.menu;
   var geometry = db.layer(layer);
+  console.log(JSON.stringify(geometry));
   res.set('Content-Type', 'application/json')
-  const body = res.body()
+  //const body = res.body()
   res.send(JSON.stringify(geometry));
 });
 

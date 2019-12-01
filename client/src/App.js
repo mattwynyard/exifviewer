@@ -60,7 +60,7 @@ class App extends Component {
             isLoaded: true,
             items: result.items
           });
-          
+          console.log(result);
         },
         // Note: it's important to handle errors here
         // instead of a catch() block so that we don't swallow
@@ -72,7 +72,7 @@ class App extends Component {
           });
         }
       )
-      console.log(this.state.item);
+     
   }
 
   // MyVerticallyCenteredModal(props) {

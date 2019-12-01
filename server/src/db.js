@@ -27,6 +27,7 @@ module.exports = {
                 return console.error('Error executing query', err.stack)
             }
             var geometry = result.rows[0].st_asgeojson;
+            //console.log(geometry);
             return geometry;
         })
     }
