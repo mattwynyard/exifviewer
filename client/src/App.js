@@ -1,27 +1,26 @@
 import React, { Component } from 'react';
 import { Map, TileLayer, Marker, Popup }  from 'react-leaflet';
-import axios from 'axios';
-import {Navbar, Nav, NavDropdown}  from 'react-bootstrap';
+import {Navbar, Nav, NavDropdown, Modal, Button}  from 'react-bootstrap';
 
 import './App.css';
 
 class App extends Component {
 
-  state = {
-    location: {
-      lat: -41.2728,
-      lng: 173.2995,
-    },
-    zoom: 8
+ 
+
+  constructor(props) {
+    super(props);
+    this.state = {
+      location: {
+        lat: -41.2728,
+        lng: 173.2995,
+      },
+      zoom: 8,
+      error: null,
+      isLoaded: false,
+      item: []
+    };
   }
-
-  // constructor(props) {
-  //   super(props);
-  //   this.state = {isToggleOn: true};
-
-  //   // This binding is necessary to make `this` work in the callback
-  //   this.loadLayer = this.loadLayer.bind(this);
-  // }
 
   componentDidMount() {
     // Call our fetch function below once the component mounts
@@ -52,8 +51,57 @@ class App extends Component {
         longitude: this.state.location.lng,
         menu: e.target.id
       })
-    })  
-  };
+    })
+    .then(res => res.json())
+      .then(
+        (result) => {
+
+          this.setState({
+            isLoaded: true,
+            items: result.items
+          });
+          
+        },
+        // Note: it's important to handle errors here
+        // instead of a catch() block so that we don't swallow
+        // exceptions from actual bugs in components.
+        (error) => {
+          this.setState({
+            isLoaded: true,
+            error
+          });
+        }
+      )
+      console.log(this.state.item);
+  }
+
+  // MyVerticallyCenteredModal(props) {
+  //   return (
+  //     <Modal
+  //       {...props}
+  //       size="lg"
+  //       aria-labelledby="contained-modal-title-vcenter"
+  //       centered
+  //     >
+  //       <Modal.Header closeButton>
+  //         <Modal.Title id="contained-modal-title-vcenter">
+  //           Modal heading
+  //         </Modal.Title>
+  //       </Modal.Header>
+  //       <Modal.Body>
+  //         <h4>Centered Modal</h4>
+  //         <p>
+  //           Cras mattis consectetur purus sit amet fermentum. Cras justo odio,
+  //           dapibus ac facilisis in, egestas eget quam. Morbi leo risus, porta ac
+  //           consectetur ac, vestibulum at eros.
+  //         </p>
+  //       </Modal.Body>
+  //       <Modal.Footer>
+  //         <Button onClick={props.onHide}>Close</Button>
+  //       </Modal.Footer>
+  //     </Modal>
+  //   );
+  // }
 
   render() {
     const position = [this.state.location.lat, this.state.location.lng];

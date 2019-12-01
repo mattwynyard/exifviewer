@@ -3,7 +3,7 @@ const { Pool, Client } = require('pg')
 const connection = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'dbtemp',
+    database: 'tempdb',
     password: 'Glacier_7',
     port: 5432,
     max: 20,
@@ -22,13 +22,11 @@ console.log("connected to database on port: " );
 
 module.exports = { 
     layer: function(layer) { 
-        connection.query('SELECT ST_AsGeoJSON(geom) FROM nzta_centrelines_marlborough', (err, result) => {
+        connection.query('SELECT ST_AsGeoJSON(geom) FROM centrelines', (err, result) => {
             if (err) {
                 return console.error('Error executing query', err.stack)
             }
-            console.log(result.rows[0]); // brianc
-            var geometry = JSON.parse(result.rows[0].st_asgeojson);
-            console.log(geometry.coordinates[0]);
+            var geometry = result.rows[0].st_asgeojson;
             return geometry;
         })
     }

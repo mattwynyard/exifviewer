@@ -5,10 +5,7 @@ const cors = require('cors')
 const db = require('./db.js')
 const bodyParser = require('body-parser')
 
-//require('dotenv').config();
-
 const middlewares = require('./middlewares');
-//const api = require('./api');
 
 const app = express();
 app.use(cors());
@@ -26,19 +23,17 @@ app.use((req, res, next) => {
   next();
 });
 
-
-
 app.get('/api', (req, res) => {
   res.send({ express: 'Server online' });
   
 });
 
-app.post('/layer', (req, res) => {
-  //var body = JSON.parse(req.body);
+app.post('/layer', (req, res, next) => {
   var layer = req.body.menu;
   var geometry = db.layer(layer);
   res.set('Content-Type', 'application/json')
-  //res.send(geometry);
+  const body = res.body()
+  res.send(JSON.stringify(geometry));
 });
 
 
