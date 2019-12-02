@@ -39,9 +39,24 @@ class App extends Component {
     return body;
   };
 
+  plotLines(data) {
+    //console.log(data.length);
+    for (var i = 0; i < data.length; i++) {
+      var lines = JSON.parse(data[i].st_asgeojson);
+      if (lines != null) {
+        //console.log(lines.coordinates);
+        var coordinates = lines.coordinates;
+        //console.log(coordinates[0]);
+        for (var i = 0; i < coordinates[0].length; i++) {
+        console.log(coordinates[0][i]);
+        }
+      }      
+    }
+  }
+
   
   async loadLayer(e) {
-    await fetch('http://localhost:5000/layer', {
+    const response = await fetch('http://localhost:5000/layer', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -52,7 +67,13 @@ class App extends Component {
         longitude: this.state.location.lng,
         menu: e.target.id
       })
-    })  
+    })
+    const body = await response.json();
+
+    this.plotLines(body);
+    if (response.status !== 200) {
+      throw Error(body.message) 
+    } 
   };
 
   render() {
