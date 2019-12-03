@@ -19,7 +19,6 @@ app.use(express.json());
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-  db.c
   next();
 });
 
@@ -28,13 +27,13 @@ app.get('/api', (req, res) => {
   
 });
 
-app.post('/layer', (req, res, next) => {
+app.post('/layer', async (req, res, next) => {
   var layer = req.body.menu;
-  var geometry = db.layer(layer);
-  console.log(JSON.stringify(geometry));
+  var geometry = await db.layer(layer);
+  console.log(geometry.rows);
   res.set('Content-Type', 'application/json')
   //const body = res.body()
-  res.send(JSON.stringify(geometry));
+  res.send(geometry.rows);
 });
 
 

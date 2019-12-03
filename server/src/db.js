@@ -1,4 +1,5 @@
-const { Pool, Client } = require('pg')
+'use strict'
+const { Pool } = require('pg')
 
 const connection = new Pool({
     user: 'postgres',
@@ -13,22 +14,22 @@ connection.connect(function(err) {
     if (err) throw err;
 });
 
-
-
-
 connection.on('connect', () => {
-console.log("connected to database on port: " );
+    console.log("connected to database on port: ");
 });
 
 module.exports = { 
     layer: function(layer) { 
-        connection.query('SELECT ST_AsGeoJSON(geom) FROM centrelines', (err, result) => {
-            if (err) {
-                return console.error('Error executing query', err.stack)
-            }
-            var geometry = result.rows[0].st_asgeojson;
-            //console.log(geometry);
-            return geometry;
+        return new Promise((resolve, reject) => {
+            let district = "Waitomo District";
+            connection.query("SELECT gid, fault, ST_AsGeoJSON(geom) FROM faults", (err, result) => {
+                if (err) {
+                    console.error('Error executing query', err.stack)
+                    return reject(err);
+                }
+                var geometry = resolve(result);
+                return geometry;
+            })
         })
     }
 }
