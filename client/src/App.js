@@ -1,6 +1,6 @@
 import React, { Component} from 'react';
-import { Map, TileLayer, Marker, Popup }  from 'react-leaflet';
-import {Navbar, Nav, NavDropdown, Modal, Button }  from 'react-bootstrap';
+import { Map, TileLayer, Marker, Popup}  from 'react-leaflet';
+import {Navbar, Nav, NavDropdown, Modal, Button, Image, Popover, Overlay}  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
 import ModalImage from "./ModalImage";
@@ -14,15 +14,21 @@ class App extends Component {
         lat: -41.2728,
         lng: 173.2995,
       },
-      zoom: 8,
+	  zoom: 8,
+	  index: null,
       markersData: [],
       fault: [],
-      photo: [],
+      photos: [],
+      currentPhoto: null,
+      currentFault: null,
       layers: [],
       bounds: {},
       icon: this.getCustomIcon(),
       show: false,
-      modalPhoto: null
+      modalPhoto: null,
+	  popover: false,
+	  photourl: null,
+	  amazon: "https:/taranaki.s3.ap-southeast-2.amazonaws.com/Roads/2019_11/"
     };
     // showModal = e => {
     //   this.setState({
@@ -109,9 +115,10 @@ class App extends Component {
     }
     this.setState({markersData: markersData});
     this.setState({fault: faults});
-    this.setState({photo: photos});
+    this.setState({photos: photos});
   }
 
+  //EVENTS
   /**
    * fires when user scrolls mousewheel
    * param - e the mouse event
@@ -120,17 +127,61 @@ class App extends Component {
     this.setState({zoom: e.target.getZoom()});
     this.setState({bounds: e.target.getBounds()});
     //const { markersData } = this.state.markersData;  
-    console.log(e.target.getZoom())
+    //console.log(e.target.getZoom())
+  }
+
+  clickImage(e) {
+    
+    this.setState({show: true});
+  }
+
+  pad(n, width, z) {
+	z = z || '0';
+	n = n + '';
+	return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+  }
+
+  clickPrev(e) {
+	let photo = this.state.currentPhoto;
+	let suffix = photo.slice(photo.length - 5, photo.length);
+	let intSuffix = (parseInt(photo.slice(photo.length - 5, photo.length)));
+	let n = intSuffix - 1;
+	let newSuffix = this.pad(n, 5);
+	let prefix = photo.slice(0, photo.length - 5);
+	let newPhoto = prefix + newSuffix;
+	this.setState({currentPhoto: newPhoto});
+	const url = this.state.amazon + newPhoto + ".jpg";
+	this.setState({photourl: url});
+	
+	}
+
+  clickNext(e) {
+	let photo = this.state.currentPhoto;
+	let suffix = photo.slice(photo.length - 5, photo.length);
+	let intSuffix = (parseInt(photo.slice(photo.length - 5, photo.length)));
+	let n = intSuffix + 1;
+	let newSuffix = this.pad(n, 5);
+	let prefix = photo.slice(0, photo.length - 5);
+	let newPhoto = prefix + newSuffix;
+	this.setState({currentPhoto: newPhoto});
+	const url = this.state.amazon + newPhoto + ".jpg";
+	this.setState({photourl: url});
   }
 
   clickMarker(e) {
     var marker = e.target;
-    const index = marker.options.index;
-    const data = marker.options.data
-    console.log(this.state.photo[index]);
-    this.setState({show: true});
-    //this.render();
-    this.renderModal(this.state.photo[index]);
+	const index = marker.options.index;
+	this.setState({index: index});
+	const data = marker.options.data
+	const photo = this.state.photos[index]
+	const url = this.state.amazon + photo + ".jpg";
+	console.log(url);
+	this.setState({photourl: url});
+    this.setState({currentFault: this.state.fault[index]});
+    //console.log(index);
+    this.setState({popover: true});
+    this.setState({currentPhoto: this.state.photos[index]})
+    this.renderModal(this.state.photos[index]);
   }
 
   async loadLayer(e) {
@@ -154,10 +205,17 @@ class App extends Component {
     
   };
 
+  closeModal() {
+	this.setState({show: false});
+	this.setState({popover: false});
+  }
+
+  //RENDER
+
   renderModal(photo) {
-    this.setState({show: true});
-    this.setState({modalPhoto: photo});
-    this.render();
+    //this.setState({show: true});
+    //this.setState({modalPhoto: photo});
+    //this.render();
 
   }
 
@@ -165,8 +223,26 @@ class App extends Component {
     const position = [this.state.location.lat, this.state.location.lng];
     const { markersData } = this.state.markersData;
     const { fault } = this.state.fault;
-    const { photo } = this.state.photo;
-    const handleClose = () => this.setState({show: false});
+	const { photo } = this.state.photos;
+	
+	const handleClose = () => this.setState({show: false});
+
+    const popover =(
+		<Popover>
+			<div>
+				<div>
+				{this.state.currentFault}
+				</div>
+				<div>
+				<Image className="thumbnail" src="CameraSpringGreen_16px.png" photo={photo} onClick={(e) => this.clickImage(e)} thumbnail width="128" height="128"></Image >
+				</div>          
+			</div>
+  		</Popover>
+
+    );
+    //const { currentFault } = this.state.currentFault;
+    //const { currentPhoto } = this.state.currentPhoto;
+   
     return (
       <>
         <div>
@@ -203,33 +279,52 @@ class App extends Component {
             attribution="&amp;copy <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors and Chat location by Iconika from the Noun Project"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+		 
           {this.state.markersData.map((position, index) => 
-
           <Marker 
-          key={`${index}`}
-          index={index}
-          data={fault}
-          photo={photo}
-          position={position} 
-          icon={this.getCustomIcon(this.state.fault[index], this.state.zoom)}
-          draggable={false} 
-          onClick={(e) => this.clickMarker(e)}>
-             <Popup>
-            A pretty CSS3 popup. <br /> Easily customizable.
-          </Popup>
-        </Marker>
+			key={`${index}`}
+			index={index}
+			data={fault}
+			photo={photo}
+			position={position} 
+			icon={this.getCustomIcon(this.state.fault[index], this.state.zoom)}
+			draggable={false} 
+			onClick={(e) => this.clickMarker(e)}				  
+			>
+			<Popup className="popup">
+			<div>
+				<p>
+					{this.state.currentFault}
+				</p>
+				<div>
+				<Image className="thumbnail" src={this.state.photourl} photo={photo} onClick={(e) => this.clickImage(e)} thumbnail={true}></Image >
+				</div>          
+			</div>
+  			</Popup>  
+		</Marker>
+		
         )}
         
         </Map> 
       </div>
-      <Modal show={this.state.show}>
+      <Modal show={this.state.show} size={'xl'}>
         <Modal.Header>
-          <Modal.Title>{this.state.modalPhoto}</Modal.Title>
+          <Modal.Title>{this.state.currentPhoto}</Modal.Title>
         </Modal.Header>
-        <Modal.Body ></Modal.Body>
+        <Modal.Body >
+		
+		<Image className="photo" src={this.state.photourl} photo={photo} onClick={(e) => this.clickImage(e)} thumbnail></Image >
+		
+		</Modal.Body>
         <Modal.Footer>
+		<Button className="prev" onClick={(e) => this.clickPrev(e)}> 
+            Previous
+          </Button>
           <Button variant="primary" onClick={handleClose}>
             Close
+          </Button>
+		  <Button className="next" variant="primary" onClick={(e) => this.clickNext(e)}>
+            Next
           </Button>
         </Modal.Footer>
       </Modal>

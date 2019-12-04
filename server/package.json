@@ -5,14 +5,14 @@
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
-    "server": "nodemon server.js",
+    "server": "nodemon src/server.js",
     "dev": "nodemon src/index.js",
     "lint": "eslint --fix src",
     "audit": "snyk test",
     "test": "mocha -w"
   },
   "keywords": [],
-  "author": "",
+  "author": "Matt Wynyard",
   "repository": {
     "type": "git",
     "url": ""

@@ -28,6 +28,32 @@ body {
   color: #fff;
 }
 
+.popup {
+  width: 200px;
+}
+
+.thumbnail {
+  height: 77px;
+  width: 103px;
+}
+
+.photo {
+  height: 770px;
+  width: 1026px;
+}
+
+.prev {
+  position:absolute;
+  left: 450px;
+  top: 880px;
+}
+
+.next {
+  position:absolute;
+  left: 550px;
+  top: 880px;
+}
+
 .footer {
   height: 10vh;
 }
