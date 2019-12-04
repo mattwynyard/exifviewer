@@ -1,8 +1,9 @@
-import React, { Component } from 'react';
-import { Map, TileLayer, Marker }  from 'react-leaflet';
-import {Navbar, Nav, NavDropdown}  from 'react-bootstrap';
+import React, { Component} from 'react';
+import { Map, TileLayer, Marker, Popup }  from 'react-leaflet';
+import {Navbar, Nav, NavDropdown, Modal, Button }  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
+import ModalImage from "./ModalImage";
 
 class App extends Component {
 
@@ -15,10 +16,54 @@ class App extends Component {
       },
       zoom: 8,
       markersData: [],
-      fault: {},
+      fault: [],
+      photo: [],
       layers: [],
       bounds: {},
-      icon: null
+      icon: this.getCustomIcon(),
+      show: false,
+      modalPhoto: null
+    };
+    // showModal = e => {
+    //   this.setState({
+    //     show: true
+    //   });
+    // };
+  }
+
+  getCustomIcon(data, zoom) {
+    let icon = null;
+    //console.log(zoom);
+    const size = this.getSize(zoom);
+      if (data === "Scabbing") {
+        icon = L.icon({
+        iconUrl: 'CameraSpringGreen_16px.png',
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        });
+      } else if (data === "Flushing") {
+        icon = L.icon({
+        iconUrl: 'CameraDodgerBlue_16px.png',
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        });      
+      } else {
+        icon = L.icon({
+        iconUrl: 'CameraRed_16px.png',
+        iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2],
+        });
+      }  
+      return icon
+  }
+
+  getSize(zoom) {
+    if (zoom < 10) {
+      return 4;
+    } else if (zoom >= 10 && zoom <= 16) {
+      return 8;
+    } else {
+      return 16;
     }
   }
 
@@ -47,12 +92,15 @@ class App extends Component {
 
   async addMarkers(data) {
     let markersData = [];
-    let table = [];
+    let faults = [];
+    let photos = [];
     for (var i = 0; i < data.length; i++) {
-      const id = data[i].gid
+      const gid = data[i].gid
       const fault = data[i].fault
-      let record = {id: id, fault: fault};
-      table.push(record);
+      const photo = data[i].photoid
+      //console.log(data[i].photoid);
+      faults.push(fault);
+      photos.push(photo);
       const position = JSON.parse(data[i].st_asgeojson);
       const lng = position.coordinates[0];
       const lat = position.coordinates[1];
@@ -60,9 +108,8 @@ class App extends Component {
       markersData.push(latlng);     
     }
     this.setState({markersData: markersData});
-    this.setState({fault: table});
-    //console.log(this.state.markersData[0])
-    //console.log(this.state.fault)
+    this.setState({fault: faults});
+    this.setState({photo: photos});
   }
 
   /**
@@ -71,33 +118,21 @@ class App extends Component {
    **/
   onZoom(e) {
     this.setState({zoom: e.target.getZoom()});
-    this.setState({bounds: e.target.getBounds()});    
+    this.setState({bounds: e.target.getBounds()});
+    //const { markersData } = this.state.markersData;  
+    console.log(e.target.getZoom())
   }
 
   clickMarker(e) {
     var marker = e.target;
-    //let icon = marker.getIcon();
-    console.log(marker.key)
+    const index = marker.options.index;
+    const data = marker.options.data
+    console.log(this.state.photo[index]);
+    this.setState({show: true});
+    //this.render();
+    this.renderModal(this.state.photo[index]);
   }
 
-  getIcon(zoom) {
-    let icon = null;
-    if (zoom <= 10) {
-      icon = L.icon({
-      iconUrl: 'CameraRed_4px.png',
-      iconSize: [4, 4],
-      iconAnchor: [2, 2],
-      });
-    } else {
-      icon = L.icon({
-        iconUrl: 'CameraRed_8px.png',
-        iconSize: [8, 8],
-        iconAnchor: [4, 4],
-        });
-    }
-    return icon
-  }
-  
   async loadLayer(e) {
     const response = await fetch('http://localhost:5000/layer', {
       method: 'POST',
@@ -119,20 +154,19 @@ class App extends Component {
     
   };
 
-  customMarker = L.Marker.extend({
-    options: {
-    id: null,
-    type: ''
-    }
-    });
+  renderModal(photo) {
+    this.setState({show: true});
+    this.setState({modalPhoto: photo});
+    this.render();
+
+  }
 
   render() {
-    //console.log("render");
     const position = [this.state.location.lat, this.state.location.lng];
     const { markersData } = this.state.markersData;
-    console.log(this.state.zoom);
-    let icon = this.getIcon(this.state.zoom);
-    this.state.icon = icon;
+    const { fault } = this.state.fault;
+    const { photo } = this.state.photo;
+    const handleClose = () => this.setState({show: false});
     return (
       <>
         <div>
@@ -159,6 +193,8 @@ class App extends Component {
           ref={(ref) => { this.map = ref; }}
           className="map"
           markersData={markersData}
+          fault={fault}
+          photo={photo}
           worldCopyJump={true}
           center={position}
           zoom={this.state.zoom}
@@ -170,15 +206,44 @@ class App extends Component {
           {this.state.markersData.map((position, index) => 
 
           <Marker 
-          key={`${index}`} 
+          key={`${index}`}
+          index={index}
+          data={fault}
+          photo={photo}
           position={position} 
-          icon={this.state.icon} 
+          icon={this.getCustomIcon(this.state.fault[index], this.state.zoom)}
           draggable={false} 
           onClick={(e) => this.clickMarker(e)}>
+             <Popup>
+            A pretty CSS3 popup. <br /> Easily customizable.
+          </Popup>
         </Marker>
         )}
+        
         </Map> 
       </div>
+      <Modal show={this.state.show}>
+        <Modal.Header>
+          <Modal.Title>{this.state.modalPhoto}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body ></Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={handleClose}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      {/* <Modal show={this.state.show}>
+          <Modal.Header>
+            <Modal.Title>{this.state.modalPhoto}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body ></Modal.Body>
+          <Modal.Footer>
+            <Button variant="primary" onClick={handleClose}>
+              Close
+            </Button>
+          </Modal.Footer>
+        </Modal> */}
       <div className="footer">
       </div>
       </>
