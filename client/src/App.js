@@ -175,7 +175,7 @@ class App extends Component {
 	const data = marker.options.data
 	const photo = this.state.photos[index]
 	const url = this.state.amazon + photo + ".jpg";
-	console.log(url);
+	//console.log(url);
 	this.setState({photourl: url});
     this.setState({currentFault: this.state.fault[index]});
     //console.log(index);
@@ -309,12 +309,10 @@ class App extends Component {
       </div>
       <Modal show={this.state.show} size={'xl'}>
         <Modal.Header>
-          <Modal.Title>{this.state.currentPhoto}</Modal.Title>
+          <Modal.Title>{this.state.currentFault}</Modal.Title>
         </Modal.Header>
-        <Modal.Body >
-		
-		<Image className="photo" src={this.state.photourl} photo={photo} onClick={(e) => this.clickImage(e)} thumbnail></Image >
-		
+        <Modal.Body >		
+		<Image className="photo" src={this.state.photourl} data={fault} onClick={(e) => this.clickImage(e)} thumbnail></Image >		
 		</Modal.Body>
         <Modal.Footer>
 		<Button className="prev" onClick={(e) => this.clickPrev(e)}> 
@@ -328,17 +326,6 @@ class App extends Component {
           </Button>
         </Modal.Footer>
       </Modal>
-      {/* <Modal show={this.state.show}>
-          <Modal.Header>
-            <Modal.Title>{this.state.modalPhoto}</Modal.Title>
-          </Modal.Header>
-          <Modal.Body ></Modal.Body>
-          <Modal.Footer>
-            <Button variant="primary" onClick={handleClose}>
-              Close
-            </Button>
-          </Modal.Footer>
-        </Modal> */}
       <div className="footer">
       </div>
       </>
