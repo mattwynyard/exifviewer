@@ -32,7 +32,6 @@ app.post('/layer', async (req, res, next) => {
   var geometry = await db.layer(layer);
   console.log(geometry.rows);
   res.set('Content-Type', 'application/json')
-  //const body = res.body()
   res.send(geometry.rows);
 });
 

@@ -1,7 +1,7 @@
 body {
   margin: 0px;
   width: 100vw;
-  height: 90vh;
+  height: 100vh;
   /* background-color: white; */
 }
 
@@ -27,6 +27,19 @@ body {
   background-color: transparent;
   color: #fff;
 }
+
+.satellite {
+
+  position: fixed;
+  
+  float: bottom;
+  bottom: 50px;
+  left: 50px;
+  z-index: 999;
+  float: left;
+
+}
+
 
 .popup {
   width: 200px;
@@ -54,8 +67,8 @@ body {
   top: 880px;
 }
 
-.footer {
+/* .footer {
   height: 10vh;
-}
+} */
 
 

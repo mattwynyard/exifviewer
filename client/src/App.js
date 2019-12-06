@@ -7,15 +7,23 @@ import ModalImage from "./ModalImage";
 
 class App extends Component {
 
+  
+
   constructor(props) {
+    const osmURL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    const mapBoxURL = "//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg";
     super(props);
     this.state = {
       location: {
         lat: -41.2728,
         lng: 173.2995,
       },
-	  zoom: 8,
-	  index: null,
+      zIndex: 900,
+      //tileServer: "//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg",
+      osmThumbnail: "satellite64.png",
+      mode: "map",
+      zoom: 8,
+      index: null,
       markersData: [],
       fault: [],
       photos: [],
@@ -28,7 +36,8 @@ class App extends Component {
       modalPhoto: null,
 	  popover: false,
 	  photourl: null,
-	  amazon: "https:/taranaki.s3.ap-southeast-2.amazonaws.com/Roads/2019_11/"
+    amazon: "https:/taranaki.s3.ap-southeast-2.amazonaws.com/Roads/2019_11/",
+    //tileServer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     };
     // showModal = e => {
     //   this.setState({
@@ -39,7 +48,7 @@ class App extends Component {
 
   getCustomIcon(data, zoom) {
     let icon = null;
-    //console.log(zoom);
+    console.log(zoom);
     const size = this.getSize(zoom);
       if (data === "Scabbing") {
         icon = L.icon({
@@ -60,7 +69,7 @@ class App extends Component {
         iconAnchor: [size / 2, size / 2],
         });
       }  
-      return icon
+      return icon;
   }
 
   getSize(zoom) {
@@ -128,6 +137,21 @@ class App extends Component {
     this.setState({bounds: e.target.getBounds()});
     //const { markersData } = this.state.markersData;  
     //console.log(e.target.getZoom())
+  }
+
+  toogleMap(e) {
+    console.log("click");
+    if (this.state.mode == "map") {
+      this.setState({zIndex: 1000});
+      this.setState({mode: "sat"});
+      this.setState({osmThumbnail: "map64.png"});
+      console.log("map");
+    } else {
+      console.log("sat");
+      this.setState({zIndex: 900});
+      this.setState({mode: "map"});
+      this.setState({osmThumbnail: "satellite64.png"})
+    }
   }
 
   clickImage(e) {
@@ -223,25 +247,16 @@ class App extends Component {
     const position = [this.state.location.lat, this.state.location.lng];
     const { markersData } = this.state.markersData;
     const { fault } = this.state.fault;
-	const { photo } = this.state.photos;
-	
-	const handleClose = () => this.setState({show: false});
-
-    const popover =(
-		<Popover>
-			<div>
-				<div>
-				{this.state.currentFault}
-				</div>
-				<div>
-				<Image className="thumbnail" src="CameraSpringGreen_16px.png" photo={photo} onClick={(e) => this.clickImage(e)} thumbnail width="128" height="128"></Image >
-				</div>          
-			</div>
-  		</Popover>
-
-    );
-    //const { currentFault } = this.state.currentFault;
-    //const { currentPhoto } = this.state.currentPhoto;
+    const { photo } = this.state.photos;    
+    const handleClose = () => this.setState({show: false});
+    const CustomTile = function CustomTile (props) {
+        return (
+            <TileLayer className="mapLayer"
+            attribution="&amp;copy <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors and Chat location by Iconika from the Noun Project"
+            url={"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
+          />
+      );
+    }
    
     return (
       <>
@@ -262,10 +277,10 @@ class App extends Component {
           <Nav className="ml-auto">
             <Nav.Link href="#login">Login</Nav.Link>
           </Nav>
-          </Navbar>
-        </div>
+          </Navbar>         
+        </div>      
         <div className="map">
-        <Map
+        <Map       
           ref={(ref) => { this.map = ref; }}
           className="map"
           markersData={markersData}
@@ -274,39 +289,45 @@ class App extends Component {
           worldCopyJump={true}
           center={position}
           zoom={this.state.zoom}
-          onZoom={(e) => this.onZoom(e)}>
-          <TileLayer
+          onZoom={(e) => this.onZoom(e)}        
+          >
+          {/* <TileLayer className="mapLayer"
             attribution="&amp;copy <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors and Chat location by Iconika from the Noun Project"
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            url={"//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg"}
+            zIndex={this.state.zIndex}
+          /> */}
+          <TileLayer className="mapLayer"
+            attribution="&amp;copy <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors and Chat location by Iconika from the Noun Project"
+            url={"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
+            zIndex={999}
           />
-		 
-          {this.state.markersData.map((position, index) => 
-          <Marker 
-			key={`${index}`}
-			index={index}
-			data={fault}
-			photo={photo}
-			position={position} 
-			icon={this.getCustomIcon(this.state.fault[index], this.state.zoom)}
-			draggable={false} 
-			onClick={(e) => this.clickMarker(e)}				  
-			>
-			<Popup className="popup">
-			<div>
-				<p>
-					{this.state.currentFault}
-				</p>
-				<div>
-				<Image className="thumbnail" src={this.state.photourl} photo={photo} onClick={(e) => this.clickImage(e)} thumbnail={true}></Image >
-				</div>          
-			</div>
-  			</Popup>  
-		</Marker>
-		
-        )}
-        
-        </Map> 
+      <Image className="satellite" src={this.state.osmThumbnail} onClick={(e) => this.toogleMap(e)} thumbnail={true}/>
+      {this.state.markersData.map((position, index) => 
+        <Marker 
+          key={`${index}`}
+          index={index}
+          data={fault}
+          photo={photo}
+          position={position} 
+          icon={this.getCustomIcon(this.state.fault[index], this.state.zoom)}
+          draggable={false} 
+          onClick={(e) => this.clickMarker(e)}				  
+          >
+          <Popup className="popup">
+          <div>
+            <p>
+              {this.state.currentFault}
+            </p>
+            <div>
+            <Image className="thumbnail" src={this.state.photourl} photo={photo} onClick={(e) => this.clickImage(e)} thumbnail={true}></Image >
+            </div>          
+          </div>
+          </Popup>  
+        </Marker>
+      )}      
+      </Map>   
       </div>
+      
       <Modal show={this.state.show} size={'xl'}>
         <Modal.Header>
           <Modal.Title>{this.state.currentFault}</Modal.Title>
