@@ -96,7 +96,7 @@ class App extends Component {
   }
 
   callBackendAPI = async () => {
-    const response = await fetch('http://localhost:5000/api') 
+    const response = await fetch('https://localhost:443/api') 
     const body = await response.json();
     console.log(body.express)
     if (response.status !== 200) {
@@ -209,7 +209,7 @@ class App extends Component {
   }
 
   async loadLayer(e) {
-    const response = await fetch('http://localhost:5000/layer', {
+    const response = await fetch('https://localhost:443/layer', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
