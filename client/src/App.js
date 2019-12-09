@@ -166,7 +166,7 @@ class App extends Component {
 
   toogleMap(e) {
     console.log("click");
-    if (this.state.mode == "map") {
+    if (this.state.mode === "map") {
       this.setState({zIndex: 1000});
       this.setState({mode: "sat"});
       this.setState({osmThumbnail: "map64.png"});
