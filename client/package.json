@@ -2,8 +2,8 @@
   "name": "client",
   "version": "0.1.0",
   "private": true,
-  "proxy": "https://localhost:443/",
-  "start": "set HTTPS=true&&react-scripts start",
+  "proxy": "http://localhost:5000/",
+  "start": "react-scripts start",
   "dependencies": {
     "bootstrap": "^4.4.0",
     "leaflet": "^1.6.0",
@@ -14,7 +14,7 @@
     "react-scripts": "3.2.0"
   },
   "scripts": {
-    "start": "set HTTPS=true&&react-scripts start",
+    "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

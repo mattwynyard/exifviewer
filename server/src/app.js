@@ -27,6 +27,11 @@ app.get('/api', (req, res) => {
   
 });
 
+app.post('/login', async (req, res, next) => {
+  console.log(req.body);
+  res.send({ express: 'Login' });
+});
+
 app.post('/layer', async (req, res, next) => {
   var layer = req.body.menu;
   var geometry = await db.layer(layer);

@@ -1,15 +1,14 @@
 import React, { Component} from 'react';
 import { Map, TileLayer, Marker, Popup}  from 'react-leaflet';
-import {Navbar, Nav, NavDropdown, Modal, Button, Image, Popover, Overlay}  from 'react-bootstrap';
+import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form, Popover, Overlay}  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
-import ModalImage from "./ModalImage";
 
 class App extends Component {
 
-  
-
   constructor(props) {
+    const userInput = React.createRef(); 
+    const passwordInput = React.createRef(); 
     const osmURL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
     const mapBoxURL = "//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg";
     super(props);
@@ -25,51 +24,56 @@ class App extends Component {
       zoom: 8,
       index: null,
       markersData: [],
+      objData: [],
       fault: [],
+      priority: [],
+      sizes: [],
       photos: [],
       currentPhoto: null,
-      currentFault: null,
+      currentFault: [],
       layers: [],
       bounds: {},
       icon: this.getCustomIcon(),
       show: false,
+      showLogin: false,
       modalPhoto: null,
-	  popover: false,
-	  photourl: null,
-    amazon: "https:/taranaki.s3.ap-southeast-2.amazonaws.com/Roads/2019_11/",
-    //tileServer: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      popover: false,
+      photourl: null,
+      amazon: "https:/taranaki.s3.ap-southeast-2.amazonaws.com/Roads/2019_11/",
+      user: null,
+      passowrd: null
     };
-    // showModal = e => {
-    //   this.setState({
-    //     show: true
-    //   });
-    // };
   }
 
   getCustomIcon(data, zoom) {
     let icon = null;
-    console.log(zoom);
     const size = this.getSize(zoom);
-      if (data === "Scabbing") {
-        icon = L.icon({
-        iconUrl: 'CameraSpringGreen_16px.png',
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2],
-        });
-      } else if (data === "Flushing") {
-        icon = L.icon({
-        iconUrl: 'CameraDodgerBlue_16px.png',
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2],
-        });      
-      } else {
-        icon = L.icon({
-        iconUrl: 'CameraRed_16px.png',
-        iconSize: [size, size],
-        iconAnchor: [size / 2, size / 2],
-        });
-      }  
-      return icon;
+    if (data === "5") {
+      icon = L.icon({
+      iconUrl: 'CameraSpringGreen_16px.png',
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      });
+    } else if (data === "4") {
+      icon = L.icon({
+      iconUrl: 'CameraOrange_16px.png',
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      });      
+    } else if (data === "3") {
+      icon = L.icon({
+      iconUrl: 'CameraLemon_16px.png',
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      });
+    } else  {
+      icon = L.icon({
+      iconUrl: 'CameraSpringGreen_16px.png',
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      });
+    }  
+    return icon;
   }
 
   getSize(zoom) {
@@ -82,9 +86,6 @@ class App extends Component {
     }
   }
 
-  // const CustomMarker = (RL as any).withLeaflet(class extends MapLayer<any> {
-  // });
-
   componentDidMount() {
     // Call our fetch function below once the component mounts
     this.callBackendAPI()
@@ -96,7 +97,7 @@ class App extends Component {
   }
 
   callBackendAPI = async () => {
-    const response = await fetch('https://localhost:443/api') 
+    const response = await fetch('http://localhost:5000/api') 
     const body = await response.json();
     console.log(body.express)
     if (response.status !== 200) {
@@ -107,24 +108,50 @@ class App extends Component {
 
   async addMarkers(data) {
     let markersData = [];
+    let objData = [];
     let faults = [];
     let photos = [];
+    let priorities = [];
+    let size = [];
     for (var i = 0; i < data.length; i++) {
-      const gid = data[i].gid
-      const fault = data[i].fault
-      const photo = data[i].photoid
-      //console.log(data[i].photoid);
+      const photo = data[i].photoid;
+      const gid = data[i].gid;
+      const roadid = data[i].roadid;
+      const carriageway = data[i].carriagewa;
+      const location = data[i].location;
+      const fault = data[i].fault;
+      const size = data[i].size;
+      const priority = data[i].priority;
+      const datetime = data[i].faulttime;
+      let obj = new Object()
+      obj = {
+        gid: data[i].gid,
+        roadid: data[i].roadid,
+        carriage: data[i].carriagewa,
+        location: data[i].location,
+        fault: data[i].fault,
+        size: data[i].size,
+        priority: data[i].priority,
+        photo: data[i].photoid,
+        datetime: data[i].faulttime
+      };
       faults.push(fault);
       photos.push(photo);
+      objData.push(obj);
+      priorities.push(priority);
       const position = JSON.parse(data[i].st_asgeojson);
       const lng = position.coordinates[0];
       const lat = position.coordinates[1];
       let latlng = L.latLng(lat, lng);
       markersData.push(latlng);     
     }
+    //console.log(faults[0]);
     this.setState({markersData: markersData});
     this.setState({fault: faults});
     this.setState({photos: photos});
+    this.setState({sizes: size});
+    this.setState({priority: priorities});
+    this.setState({objData: objData});
   }
 
   //EVENTS
@@ -135,8 +162,6 @@ class App extends Component {
   onZoom(e) {
     this.setState({zoom: e.target.getZoom()});
     this.setState({bounds: e.target.getBounds()});
-    //const { markersData } = this.state.markersData;  
-    //console.log(e.target.getZoom())
   }
 
   toogleMap(e) {
@@ -194,22 +219,54 @@ class App extends Component {
 
   clickMarker(e) {
     var marker = e.target;
-	const index = marker.options.index;
-	this.setState({index: index});
-	const data = marker.options.data
-	const photo = this.state.photos[index]
-	const url = this.state.amazon + photo + ".jpg";
-	//console.log(url);
-	this.setState({photourl: url});
-    this.setState({currentFault: this.state.fault[index]});
+    let fault = [];
+    const index = marker.options.index;
+    let obj = this.state.objData[index];
+    this.setState({index: index});
+    const data = marker.options.data
+    const photo = this.state.photos[index]
+    const url = this.state.amazon + photo + ".jpg";
+    //console.log(url);
+    this.setState({photourl: url});
+    fault.push(this.state.fault[index])
+    fault.push(obj.priority);
+    fault.push(obj.location);
+    this.setState({currentFault: fault});
     //console.log(index);
     this.setState({popover: true});
     this.setState({currentPhoto: this.state.photos[index]})
-    this.renderModal(this.state.photos[index]);
+    //this.renderModal(this.state.photos[index]);
+  }
+
+  clickLogin(e) {
+    this.setState({showLogin: true});
+  }
+
+  async login(e) {
+    this.setState({showLogin: false});
+    const user = this.userInput.value;
+    const key = this.passwordInput.value;
+    console.log(user + ": " + key);
+    const response = await fetch('http://localhost:5000/login', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user: this.userInput.value,
+        key: this.passwordInput.value
+      })
+    })
+    if (response.status !== 200) {
+      throw Error(body.message) 
+    } 
+    const body = await response.json();
+    console.log(body);
   }
 
   async loadLayer(e) {
-    const response = await fetch('https://localhost:443/layer', {
+    const response = await fetch('http://localhost:5000/layer', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
@@ -247,8 +304,10 @@ class App extends Component {
     const position = [this.state.location.lat, this.state.location.lng];
     const { markersData } = this.state.markersData;
     const { fault } = this.state.fault;
-    const { photo } = this.state.photos;    
+    const { photo } = this.state.photos;   
+    const { objData } = this.state.objData;     
     const handleClose = () => this.setState({show: false});
+   
     const CustomTile = function CustomTile (props) {
         return (
             <TileLayer className="mapLayer"
@@ -271,11 +330,11 @@ class App extends Component {
               
               </NavDropdown.Item>
               <NavDropdown.Divider />
-              <NavDropdown.Item href="#action/3.4">Separated link</NavDropdown.Item>
+              <NavDropdown.Item href="#action/3.4">Remove layer</NavDropdown.Item>
             </NavDropdown>         
           </Nav>
           <Nav className="ml-auto">
-            <Nav.Link href="#login">Login</Nav.Link>
+            <Nav.Link  id="AddLayer" href="#login" onClick={(e) => this.clickLogin(e)}>Login </Nav.Link>
           </Nav>
           </Navbar>         
         </div>      
@@ -309,14 +368,14 @@ class App extends Component {
           data={fault}
           photo={photo}
           position={position} 
-          icon={this.getCustomIcon(this.state.fault[index], this.state.zoom)}
+          icon={this.getCustomIcon(this.state.priority[index], this.state.zoom)}
           draggable={false} 
           onClick={(e) => this.clickMarker(e)}				  
           >
           <Popup className="popup">
           <div>
-            <p>
-              {this.state.currentFault}
+            <p className="faulttext">
+              <b>{"Type: "}</b> {this.state.currentFault[0]} <br></br> <b>{"Priority: "} </b> {this.state.currentFault[1]} <br></br><b>{"Location: "} </b> {this.state.currentFault[2]}
             </p>
             <div>
             <Image className="thumbnail" src={this.state.photourl} photo={photo} onClick={(e) => this.clickImage(e)} thumbnail={true}></Image >
@@ -327,22 +386,59 @@ class App extends Component {
       )}      
       </Map>   
       </div>
-      
-      <Modal show={this.state.show} size={'xl'}>
+
+      <Modal show={this.state.showLogin} size={'sm'} centered={true}>
         <Modal.Header>
-          <Modal.Title>{this.state.currentFault}</Modal.Title>
+          <Modal.Title>Login</Modal.Title>
         </Modal.Header>
-        <Modal.Body >		
-		<Image className="photo" src={this.state.photourl} data={fault} onClick={(e) => this.clickImage(e)} thumbnail></Image >		
-		</Modal.Body>
+        <Modal.Body >	
+        <Form>
+          <Form.Group controlId="userName">
+            <Form.Label>Username</Form.Label>
+            <Form.Control type="text" placeholder="Enter username" ref={user => this.userInput = user} />
+          </Form.Group>
+
+          <Form.Group controlId="formBasicPassword">
+            <Form.Label>Password</Form.Label>
+            <Form.Control type="password" placeholder="Password" ref={key=> this.passwordInput = key}/>
+          </Form.Group>
+          <Button variant="primary" type="submit" onClick={(e) => this.login(e)}>
+            Submit
+          </Button>
+        </Form>	
+		    </Modal.Body>
         <Modal.Footer>
-		<Button className="prev" onClick={(e) => this.clickPrev(e)}> 
+        </Modal.Footer>
+      </Modal>
+      
+      <Modal show={this.state.show} size={'xl'} >
+        <Modal.Header>
+          <Modal.Title> 
+            <div className="title">
+              <div className="titleleft">
+                <p >
+                  <b>{"Type: "}</b> {this.state.currentFault[0]} <br></br> <b>{"Priority: "} </b> {this.state.currentFault[1]} <br></br><b>{"Location: "} </b> {this.state.currentFault[2]}
+                </p>
+              </div>
+              <div className="titleRight">
+              <p >
+                <b>{"Type: "}</b> {this.state.currentFault[0]} <br></br> <b>{"Priority: "} </b> {this.state.currentFault[1]} <br></br><b>{"Location: "} </b> {this.state.currentFault[2]}
+              </p>
+              </div>
+            </div>
+            </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="photoBody">		
+		      <Image className="photo" src={this.state.photourl} data={fault} onClick={(e) => this.clickImage(e)} thumbnail></Image >		
+		    </Modal.Body >
+        <Modal.Footer>
+		      <Button className="prev" onClick={(e) => this.clickPrev(e)}> 
             Previous
           </Button>
           <Button variant="primary" onClick={handleClose}>
             Close
           </Button>
-		  <Button className="next" variant="primary" onClick={(e) => this.clickNext(e)}>
+          <Button className="next" variant="primary" onClick={(e) => this.clickNext(e)}>
             Next
           </Button>
         </Modal.Footer>

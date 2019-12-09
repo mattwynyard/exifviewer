@@ -40,6 +40,24 @@ body {
 
 }
 
+.title {
+  width: 100%; display: table;
+}
+
+.titlerow {
+  display: table-row;
+}
+
+
+.titleLeft {
+  width: 600px; display: table-cell;
+  padding-left: 100px;
+}
+
+.titleRight {
+  display: table-cell;
+}
+
 
 .popup {
   width: 200px;

@@ -4,7 +4,7 @@ const { Pool } = require('pg')
 const connection = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'tempdb',
+    database: 'dbtemp',
     password: 'Glacier_7',
     port: 5432,
     max: 20,
@@ -21,7 +21,7 @@ connection.on('connect', () => {
 module.exports = { 
     layer: function(layer) { 
         return new Promise((resolve, reject) => {
-            connection.query("SELECT gid, fault, photoid, ST_AsGeoJSON(geom) FROM faults", (err, result) => {
+            connection.query("SELECT gid, roadid, carriagewa, location, fault, size, priority, photoid, faulttime, ST_AsGeoJSON(geom) FROM faults", (err, result) => {
                 if (err) {
                     console.error('Error executing query', err.stack)
                     return reject(err);
