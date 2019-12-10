@@ -1,10 +1,10 @@
 const express = require('express');
 const morgan = require('morgan');
 const helmet = require('helmet');
-const cors = require('cors')
-const db = require('./db.js')
-const bodyParser = require('body-parser')
-
+const cors = require('cors');
+const db = require('./db.js');
+const bodyParser = require('body-parser');
+const bcrypt = require('bcrypt');
 const middlewares = require('./middlewares');
 
 const app = express();
@@ -30,6 +30,11 @@ app.get('/api', (req, res) => {
 app.post('/login', async (req, res, next) => {
   console.log(req.body);
   res.send({ express: 'Login' });
+  const password = req.body.key;
+  console.log(password);
+  bcrypt.hash(password, 10, function(err, hash) {
+    console.log(hash);
+  });
 });
 
 app.post('/layer', async (req, res, next) => {

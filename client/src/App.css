@@ -41,21 +41,19 @@ body {
 }
 
 .title {
-  width: 100%; display: table;
+  /* width: 100%; 
+  overflow: hidden; */
+  display: flex;
 }
-
-.titlerow {
-  display: table-row;
-}
-
 
 .titleLeft {
-  width: 600px; display: table-cell;
-  padding-left: 100px;
+  width: 400px;
+  /* float: left; */
 }
 
 .titleRight {
-  display: table-cell;
+  flex-grow: 1;
+ 
 }
 
 
