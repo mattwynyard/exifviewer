@@ -40,6 +40,7 @@ body {
 
 }
 
+<<<<<<< HEAD
 /* .title {
   width: 100%;
   background-color: #ffcc33;
@@ -59,6 +60,23 @@ body {
   height: 300px;
   background-color: green;
 } */
+=======
+.title {
+  /* width: 100%; 
+  overflow: hidden; */
+  display: flex;
+}
+
+.titleLeft {
+  width: 400px;
+  /* float: left; */
+}
+
+.titleRight {
+  flex-grow: 1;
+ 
+}
+>>>>>>> 0872eceea6d2d234f6e0e33ed574ca015e23d45c
 
 
 .popup {

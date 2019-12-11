@@ -17,7 +17,13 @@ class App extends Component {
         lat: -41.2728,
         lng: 173.2995,
       },
+<<<<<<< HEAD
       zIndex: 900,   //used to toogle between satellite and map
+=======
+      user: null,
+      zIndex: 900,
+      //tileServer: "//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg",
+>>>>>>> 0872eceea6d2d234f6e0e33ed574ca015e23d45c
       osmThumbnail: "satellite64.png",
       mode: "map",
       zoom: 8,
@@ -293,25 +299,29 @@ class App extends Component {
   }
 
   async loadLayer(e) {
-    const response = await fetch('http://localhost:5000/layer', {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        latitude: this.state.location.lat,
-        longitude: this.state.location.lng,
-        menu: e.target.id
+    if (login != null) {
+        const response = await fetch('http://localhost:5000/layer', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          latitude: this.state.location.lat,
+          longitude: this.state.location.lng,
+          menu: e.target.id
+        })
       })
-    })
-    if (response.status !== 200) {
-      throw Error(body.message) 
-    } 
-    const body = await response.json();
-    await this.addMarkers(body);
+      if (response.status !== 200) {
+        throw Error(body.message) 
+      } 
+      const body = await response.json();
+      await this.addMarkers(body);
+    } else {
+      
+    }
     
-  };
+  }
 
   closeModal() {
 	this.setState({show: false});
