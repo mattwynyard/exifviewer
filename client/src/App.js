@@ -17,12 +17,11 @@ class App extends Component {
         lat: -41.2728,
         lng: 173.2995,
       },
-      zIndex: 900,
-      //tileServer: "//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg",
+      zIndex: 900,   //used to toogle between satellite and map
       osmThumbnail: "satellite64.png",
       mode: "map",
       zoom: 8,
-      index: null,
+      index: 0,
       markersData: [],
       objData: [],
       fault: [],
@@ -79,10 +78,14 @@ class App extends Component {
   getSize(zoom) {
     if (zoom < 10) {
       return 4;
-    } else if (zoom >= 10 && zoom <= 16) {
-      return 8;
-    } else {
+    } else if (zoom >= 10 && zoom <= 14) {
+      return 10;
+    } else if (zoom > 14 && zoom <= 16) {
       return 16;
+    } else if  (zoom > 16 && zoom <= 18){
+      return 20;
+    } else {
+      return 32;
     }
   }
 
@@ -106,6 +109,8 @@ class App extends Component {
     return body;
   };
 
+  /*  Adds db data to various arrays and an object. Then sets state to point to arrays. 
+  */
   async addMarkers(data) {
     let markersData = [];
     let objData = [];
@@ -145,7 +150,6 @@ class App extends Component {
       let latlng = L.latLng(lat, lng);
       markersData.push(latlng);     
     }
-    //console.log(faults[0]);
     this.setState({markersData: markersData});
     this.setState({fault: faults});
     this.setState({photos: photos});
@@ -153,6 +157,18 @@ class App extends Component {
     this.setState({priority: priorities});
     this.setState({objData: objData});
   }
+
+  /**
+   * 
+   * @param {the number to pad} n 
+   * @param {the amount of pading} width 
+   * @param {digit to pad out number with (default '0'} z 
+   */
+  pad(n, width, z) {
+    z = z || '0';
+    n = n + '';
+    return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+    }
 
   //EVENTS
   /**
@@ -164,56 +180,68 @@ class App extends Component {
     this.setState({bounds: e.target.getBounds()});
   }
 
+  /**
+   * toogles between satellite and map view by swapping z-index
+   * @param {the control} e 
+   */
   toogleMap(e) {
-    console.log("click");
     if (this.state.mode === "map") {
       this.setState({zIndex: 1000});
       this.setState({mode: "sat"});
       this.setState({osmThumbnail: "map64.png"});
-      console.log("map");
     } else {
-      console.log("sat");
       this.setState({zIndex: 900});
       this.setState({mode: "map"});
       this.setState({osmThumbnail: "satellite64.png"})
     }
   }
 
-  clickImage(e) {
-    
+  clickImage(e) {    
     this.setState({show: true});
   }
 
-  pad(n, width, z) {
-	z = z || '0';
-	n = n + '';
-	return n.length >= width ? n : new Array(width - n.length + 1).join(z) + n;
+  getPhoto(direction) {
+    let photo = this.state.currentPhoto;
+    let suffix = photo.slice(photo.length - 5, photo.length);
+    let intSuffix = (parseInt(photo.slice(photo.length - 5, photo.length)));
+    let n = null;
+    if (direction === "prev") {
+      n = intSuffix - 1;
+    } else {
+      n = intSuffix + 1;
+    }
+    let newSuffix = this.pad(n, 5);
+    let prefix = photo.slice(0, photo.length - 5);
+    let newPhoto = prefix + newSuffix;
+    this.setState({currentPhoto: newPhoto});
+    return newPhoto;
+  }
+
+  /**
+   * 
+   * @param {the fault object} obj 
+   */
+  getFault(obj) {
+    let fault = [];
+    fault.push(obj.fault)
+    fault.push(obj.priority);
+    fault.push(obj.location);
+    fault.push(obj.size);
+    fault.push(obj.datetime);
+    return fault;
   }
 
   clickPrev(e) {
-	let photo = this.state.currentPhoto;
-	let suffix = photo.slice(photo.length - 5, photo.length);
-	let intSuffix = (parseInt(photo.slice(photo.length - 5, photo.length)));
-	let n = intSuffix - 1;
-	let newSuffix = this.pad(n, 5);
-	let prefix = photo.slice(0, photo.length - 5);
-	let newPhoto = prefix + newSuffix;
-	this.setState({currentPhoto: newPhoto});
+  const newPhoto = this.getPhoto("prev");
+  this.setState({currentPhoto: newPhoto});
 	const url = this.state.amazon + newPhoto + ".jpg";
-	this.setState({photourl: url});
-	
-	}
-
+  this.setState({photourl: url});
+  }
+  
   clickNext(e) {
-	let photo = this.state.currentPhoto;
-	let suffix = photo.slice(photo.length - 5, photo.length);
-	let intSuffix = (parseInt(photo.slice(photo.length - 5, photo.length)));
-	let n = intSuffix + 1;
-	let newSuffix = this.pad(n, 5);
-	let prefix = photo.slice(0, photo.length - 5);
-	let newPhoto = prefix + newSuffix;
-	this.setState({currentPhoto: newPhoto});
-	const url = this.state.amazon + newPhoto + ".jpg";
+  const newPhoto = this.getPhoto("next");
+  this.setState({currentPhoto: newPhoto});
+  const url = this.state.amazon + newPhoto + ".jpg";
 	this.setState({photourl: url});
   }
 
@@ -226,16 +254,15 @@ class App extends Component {
     const data = marker.options.data
     const photo = this.state.photos[index]
     const url = this.state.amazon + photo + ".jpg";
-    //console.log(url);
     this.setState({photourl: url});
     fault.push(this.state.fault[index])
     fault.push(obj.priority);
     fault.push(obj.location);
+    fault.push(obj.size);
+    fault.push(obj.datetime);
     this.setState({currentFault: fault});
-    //console.log(index);
     this.setState({popover: true});
     this.setState({currentPhoto: this.state.photos[index]})
-    //this.renderModal(this.state.photos[index]);
   }
 
   clickLogin(e) {
@@ -292,13 +319,6 @@ class App extends Component {
   }
 
   //RENDER
-
-  renderModal(photo) {
-    //this.setState({show: true});
-    //this.setState({modalPhoto: photo});
-    //this.render();
-
-  }
 
   render() {
     const position = [this.state.location.lat, this.state.location.lng];
@@ -386,7 +406,6 @@ class App extends Component {
       )}      
       </Map>   
       </div>
-
       <Modal show={this.state.showLogin} size={'sm'} centered={true}>
         <Modal.Header>
           <Modal.Title>Login</Modal.Title>
@@ -412,23 +431,22 @@ class App extends Component {
       </Modal>
       
       <Modal show={this.state.show} size={'xl'} >
-        <Modal.Header>
-          <Modal.Title> 
-            <div className="title">
-              <div className="titleleft">
-                <p >
-                  <b>{"Type: "}</b> {this.state.currentFault[0]} <br></br> <b>{"Priority: "} </b> {this.state.currentFault[1]} <br></br><b>{"Location: "} </b> {this.state.currentFault[2]}
-                </p>
-              </div>
-              <div className="titleRight">
-              <p >
-                <b>{"Type: "}</b> {this.state.currentFault[0]} <br></br> <b>{"Priority: "} </b> {this.state.currentFault[1]} <br></br><b>{"Location: "} </b> {this.state.currentFault[2]}
-              </p>
-              </div>
-            </div>
+        {/* <Modal.Header>
+          <Modal.Title className="title"> 
+            
             </Modal.Title>
-        </Modal.Header>
-        <Modal.Body className="photoBody">		
+        </Modal.Header> */}
+        <Modal.Body className="photoBody">	
+        <div className="container">
+              <div className="row">
+              <div className="col-md-6">
+                  <b>{"Type: "}</b> {this.state.currentFault[0]} <br></br> <b>{"Priority: "} </b> {this.state.currentFault[1]} <br></br><b>{"Location: "} </b> {this.state.currentFault[2]}
+              </div>
+              <div className="col-md-6">
+                <b>{"Size: "}</b> {this.state.currentFault[3]} <br></br> <b>{"DateTime: "} </b> {this.state.currentFault[4]}
+              </div>
+              </div>
+            </div>	
 		      <Image className="photo" src={this.state.photourl} data={fault} onClick={(e) => this.clickImage(e)} thumbnail></Image >		
 		    </Modal.Body >
         <Modal.Footer>
