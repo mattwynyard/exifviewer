@@ -3,27 +3,31 @@ import { Map, TileLayer, Marker, Popup}  from 'react-leaflet';
 import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form, Popover, Overlay}  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
+import Cookies from 'js-cookie';
+
+const cookies = new Cookies();
 
 class App extends Component {
 
   constructor(props) {
     const userInput = React.createRef(); 
     const passwordInput = React.createRef(); 
+    
     const osmURL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
     const mapBoxURL = "//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg";
     super(props);
+    const user = this.getUser();
+    const loginModal = this.getLoginModal(user);
     this.state = {
       location: {
         lat: -41.2728,
         lng: 173.2995,
       },
-<<<<<<< HEAD
-      zIndex: 900,   //used to toogle between satellite and map
-=======
-      user: null,
+      token: Cookies.get('token'),
+      login: user,
+      loginModal: loginModal,
       zIndex: 900,
       //tileServer: "//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg",
->>>>>>> 0872eceea6d2d234f6e0e33ed574ca015e23d45c
       osmThumbnail: "satellite64.png",
       mode: "map",
       zoom: 8,
@@ -46,8 +50,31 @@ class App extends Component {
       photourl: null,
       amazon: "https:/taranaki.s3.ap-southeast-2.amazonaws.com/Roads/2019_11/",
       user: null,
-      passowrd: null
+      passowrd: null,
+      projects: null,
     };
+    
+  }
+
+  /**
+   * Checks if user has cookie. If not not logged in.
+   * Returns username in cookie if found else 'Login'
+   */
+  getUser() {
+    const cookie = Cookies.get('user');
+    if (cookie === undefined) {
+      return "Login";
+    } else {
+      return cookie;
+    }    
+  }
+
+  getLoginModal(user) {
+    if (user === "Login") {
+      return (e) => this.clickLogin(e);
+    } else {
+      return (e) => this.logout(e);
+    }
   }
 
   getCustomIcon(data, zoom) {
@@ -273,60 +300,107 @@ class App extends Component {
 
   clickLogin(e) {
     this.setState({showLogin: true});
+    
+  }
+
+  async logout(e) {
+    //console.log("logout");
+    console.log(this.state.login);
+    const response = await fetch('http://localhost:5000/logout', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        "authorization": this.state.token,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        
+      },
+      body: JSON.stringify({
+        user: this.state.login,
+      })
+    });
+    const body = await response.json();
+    if (response.status !== 200) {
+      throw Error(body.message) 
+    } 
+    
+    console.log(body.success);
+    this.setState({login: "Login"});
+    this.setState({loginModal: (e) => this.clickLogin(e)});
+    Cookies.remove('token');
+    Cookies.remove('user');
   }
 
   async login(e) {
     this.setState({showLogin: false});
     const user = this.userInput.value;
     const key = this.passwordInput.value;
-    console.log(user + ": " + key);
     const response = await fetch('http://localhost:5000/login', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: {
+        "authorization": this.state.token,
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        
       },
       body: JSON.stringify({
         user: this.userInput.value,
         key: this.passwordInput.value
       })
-    })
+    });
     if (response.status !== 200) {
       throw Error(body.message) 
     } 
     const body = await response.json();
-    console.log(body);
+    if (body.result) {
+      Cookies.set('token', body.token, { expires: 7 })
+      Cookies.set('user', body.user, { expires: 7 })
+      this.setState({login: body.user});
+      this.setState({token: body.token});
+      this.setState({loginModal: (e) => this.logout(e)});
+      console.log(body.projects);
+      this.setState({projects: body.projects});
+    } else {
+      console.log("Login failed");
+    }  
   }
 
   async loadLayer(e) {
-    if (login != null) {
+    if (this.state.login != "Login") {
         const response = await fetch('http://localhost:5000/layer', {
         method: 'POST',
         headers: {
+          "authorization": this.state.token,
           'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           latitude: this.state.location.lat,
           longitude: this.state.location.lng,
-          menu: e.target.id
+          menu: e.target.id,
+          user: this.state.login
         })
       })
       if (response.status !== 200) {
-        throw Error(body.message) 
+        console.log(response.status);
       } 
       const body = await response.json();
       await this.addMarkers(body);
     } else {
       
-    }
-    
+    }    
   }
 
+  /**
+   * called when photoviewer closed
+   */
   closeModal() {
-	this.setState({show: false});
-	this.setState({popover: false});
+    this.setState({show: false});
+    this.setState({popover: false});
   }
+
+  
 
   //RENDER
 
@@ -335,9 +409,10 @@ class App extends Component {
     const { markersData } = this.state.markersData;
     const { fault } = this.state.fault;
     const { photo } = this.state.photos;   
-    const { objData } = this.state.objData;     
+    const { objData } = this.state.objData; 
+    const { login } = this.state.login;    
     const handleClose = () => this.setState({show: false});
-   
+
     const CustomTile = function CustomTile (props) {
         return (
             <TileLayer className="mapLayer"
@@ -346,26 +421,47 @@ class App extends Component {
           />
       );
     }
+    const CustomNav = function customNav(props) {
+      //console.log(props.title);
+      if (props.title === 'Login') {
+        return (<Nav className="ml-auto">
+        <Nav.Link  id="Login" href="#login" onClick={props.onClick}>{props.title} </Nav.Link>
+      </Nav>);
+      } else {
+        return(<Nav className="ml-auto"><NavDropdown title={props.title} id="basic-nav-dropdown">
+        <NavDropdown.Item href="#contact"  onClick={props.onClick}>Logout</NavDropdown.Item>
+      </NavDropdown></Nav>);
+      }
+    }
    
     return (
       <>
         <div>
           <Navbar bg="light" expand="lg"> 
-          <Navbar.Brand href="#home">
-            </Navbar.Brand>
-          <Nav>
-            <NavDropdown title="Layers" id="basic-nav-dropdown">
-              <NavDropdown.Item id="AddLayer" href="#addlayer" onClick={(e) => this.loadLayer(e)}
-              >Add Layer
-              
-              </NavDropdown.Item>
-              <NavDropdown.Divider />
-              <NavDropdown.Item href="#action/3.4">Remove layer</NavDropdown.Item>
-            </NavDropdown>         
-          </Nav>
-          <Nav className="ml-auto">
-            <Nav.Link  id="AddLayer" href="#login" onClick={(e) => this.clickLogin(e)}>Login </Nav.Link>
-          </Nav>
+            <Navbar.Brand href="#home">
+              </Navbar.Brand>
+            <Nav>
+             <ul>
+              <NavDropdown title="Layers" id="basic-nav-dropdown">
+                <NavDropdown.Item id="AddLayer" href="#addlayer" onClick={(e) => this.loadLayer(e)} onHover >
+                  Add Layer                
+                  </NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item href="#action/3.4">Remove layer</NavDropdown.Item>
+              </NavDropdown> 
+              </ul>       
+            </Nav>
+            <Nav>
+              <NavDropdown title="Help" id="basic-nav-dropdown">
+                <NavDropdown.Item id="Documentation" href="#documentation" onClick={(e) => this.documentation(e)}>Documentation</NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item href="#contact" onClick={(e) => this.contact(e)} >Contact </NavDropdown.Item>
+              </NavDropdown>         
+            </Nav>
+            <CustomNav title={this.state.login} onClick={this.state.loginModal} />
+            {/* <Nav className="ml-auto">
+              <Nav.Link  id="Login" href="#login" onClick={this.state.loginModal}>{this.state.login}</Nav.Link>
+            </Nav> */}
           </Navbar>         
         </div>      
         <div className="map">
@@ -378,41 +474,35 @@ class App extends Component {
           worldCopyJump={true}
           center={position}
           zoom={this.state.zoom}
-          onZoom={(e) => this.onZoom(e)}        
-          >
-          {/* <TileLayer className="mapLayer"
-            attribution="&amp;copy <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors and Chat location by Iconika from the Noun Project"
-            url={"//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg"}
-            zIndex={this.state.zIndex}
-          /> */}
+          onZoom={(e) => this.onZoom(e)}>
           <TileLayer className="mapLayer"
             attribution="&amp;copy <a href=&quot;http://osm.org/copyright&quot;>OpenStreetMap</a> contributors and Chat location by Iconika from the Noun Project"
             url={"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
             zIndex={999}
           />
-      <Image className="satellite" src={this.state.osmThumbnail} onClick={(e) => this.toogleMap(e)} thumbnail={true}/>
-      {this.state.markersData.map((position, index) => 
-        <Marker 
-          key={`${index}`}
-          index={index}
-          data={fault}
-          photo={photo}
-          position={position} 
-          icon={this.getCustomIcon(this.state.priority[index], this.state.zoom)}
-          draggable={false} 
-          onClick={(e) => this.clickMarker(e)}				  
-          >
-          <Popup className="popup">
-          <div>
-            <p className="faulttext">
-              <b>{"Type: "}</b> {this.state.currentFault[0]} <br></br> <b>{"Priority: "} </b> {this.state.currentFault[1]} <br></br><b>{"Location: "} </b> {this.state.currentFault[2]}
-            </p>
+          <Image className="satellite" src={this.state.osmThumbnail} onClick={(e) => this.toogleMap(e)} thumbnail={true}/>
+          {this.state.markersData.map((position, index) => 
+          <Marker 
+            key={`${index}`}
+            index={index}
+            data={fault}
+            photo={photo}
+            position={position} 
+            icon={this.getCustomIcon(this.state.priority[index], this.state.zoom)}
+            draggable={false} 
+            onClick={(e) => this.clickMarker(e)}				  
+            >
+            <Popup className="popup">
             <div>
-            <Image className="thumbnail" src={this.state.photourl} photo={photo} onClick={(e) => this.clickImage(e)} thumbnail={true}></Image >
-            </div>          
-          </div>
-          </Popup>  
-        </Marker>
+              <p className="faulttext">
+                <b>{"Type: "}</b> {this.state.currentFault[0]} <br></br> <b>{"Priority: "} </b> {this.state.currentFault[1]} <br></br><b>{"Location: "} </b> {this.state.currentFault[2]}
+              </p>
+              <div>
+              <Image className="thumbnail" src={this.state.photourl} photo={photo} onClick={(e) => this.clickImage(e)} thumbnail={true}></Image >
+              </div>          
+            </div>
+            </Popup>  
+          </Marker>
       )}      
       </Map>   
       </div>
@@ -441,11 +531,6 @@ class App extends Component {
       </Modal>
       
       <Modal show={this.state.show} size={'xl'} >
-        {/* <Modal.Header>
-          <Modal.Title className="title"> 
-            
-            </Modal.Title>
-        </Modal.Header> */}
         <Modal.Body className="photoBody">	
         <div className="container">
               <div className="row">
