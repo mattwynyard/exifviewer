@@ -41,7 +41,7 @@ app.post('/login', async (request, response, next) => {
   const password = request.body.key;
   const user = request.body.user;
   //uncomment to genrate password for new user
-  //generatePassword(10);
+  //generatePassword(password, 10);
   
   let p = await db.password(user);
   if (p.rows.length == 0) { //user doesn't exist
@@ -113,11 +113,11 @@ app.post('/layer', async (req, res, next) => {
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
 
-async function  generatePassword(rounds) {
+async function  generatePassword(password, rounds) {
   await bcrypt.genSalt(rounds, function(err, salt) {
       if (err) throw err;
       bcrypt.hash(password, salt, function(err, hash) {
-        //console.log(hash);
+        console.log(hash);
         
       });
     });

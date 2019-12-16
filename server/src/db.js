@@ -4,7 +4,7 @@ const { Pool } = require('pg')
 const connection = new Pool({
     user: 'postgres',
     host: 'localhost',
-    database: 'tempdb',
+    database: 'dbtemp',
     password: 'Glacier_7',
     port: 5432,
     max: 20,

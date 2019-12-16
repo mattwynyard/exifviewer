@@ -40,6 +40,10 @@ body {
 
 }
 
+.dropdown{
+  z-index: 1000;
+}
+
 .title {
   /* width: 100%; 
   overflow: hidden; */

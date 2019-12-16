@@ -1,6 +1,6 @@
 import React, { Component} from 'react';
 import { Map, TileLayer, Marker, Popup}  from 'react-leaflet';
-import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form, Popover, Overlay}  from 'react-bootstrap';
+import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form, Popover, Overlay, Dropdown}  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
 import Cookies from 'js-cookie';
@@ -18,6 +18,7 @@ class App extends Component {
     super(props);
     const user = this.getUser();
     const loginModal = this.getLoginModal(user);
+    const projects =  this.getProjects();
     this.state = {
       location: {
         lat: -41.2728,
@@ -51,11 +52,21 @@ class App extends Component {
       amazon: "https:/taranaki.s3.ap-southeast-2.amazonaws.com/Roads/2019_11/",
       user: null,
       passowrd: null,
-      projects: null,
+      projectArr: projects
     };
     
   }
 
+  getProjects() {
+    const cookie = Cookies.get('projects');
+    console.log("getting projects")
+    if (cookie === undefined) {
+      return [];
+      //console.log("Cookies " + cookie);
+    } else {
+      return cookie;
+    }    
+  }
   /**
    * Checks if user has cookie. If not not logged in.
    * Returns username in cookie if found else 'Login'
@@ -329,6 +340,10 @@ class App extends Component {
     this.setState({loginModal: (e) => this.clickLogin(e)});
     Cookies.remove('token');
     Cookies.remove('user');
+    Cookies.remove('projects');
+    this.setState({projectArr: []});
+    console.log("ProjectArr: " + this.state.projectArr);
+    this.render();
   }
 
   async login(e) {
@@ -359,11 +374,22 @@ class App extends Component {
       this.setState({login: body.user});
       this.setState({token: body.token});
       this.setState({loginModal: (e) => this.logout(e)});
-      console.log(body.projects);
-      this.setState({projects: body.projects});
+      
+      this.buildProjects(body.projects);
+      
     } else {
       console.log("Login failed");
     }  
+  }
+
+  buildProjects(projects) {
+    let prj = []
+    for(var i = 0; i < projects.length; i += 1) {
+      prj.push(projects[i].description + " " + projects[i].date);
+    }
+    Cookies.set('projects', prj, { expires: 7 })
+    this.setState({projectArr: prj});
+    console.log("ProjectArr: " + this.state.projectArr)
   }
 
   async loadLayer(e) {
@@ -400,17 +426,14 @@ class App extends Component {
     this.setState({popover: false});
   }
 
-  
-
   //RENDER
 
   render() {
+    console.log("render")
     const position = [this.state.location.lat, this.state.location.lng];
     const { markersData } = this.state.markersData;
     const { fault } = this.state.fault;
-    const { photo } = this.state.photos;   
-    const { objData } = this.state.objData; 
-    const { login } = this.state.login;    
+    const { photo } = this.state.photos;      
     const handleClose = () => this.setState({show: false});
 
     const CustomTile = function CustomTile (props) {
@@ -422,7 +445,7 @@ class App extends Component {
       );
     }
     const CustomNav = function customNav(props) {
-      //console.log(props.title);
+      
       if (props.title === 'Login') {
         return (<Nav className="ml-auto">
         <Nav.Link  id="Login" href="#login" onClick={props.onClick}>{props.title} </Nav.Link>
@@ -433,23 +456,50 @@ class App extends Component {
       </NavDropdown></Nav>);
       }
     }
-   
+
+    const CustomMenu = function(props) {
+      const p = props.projects;
+      console.log("Projects" + p);
+      if (p === undefined) {
+        return (
+        
+          <NavDropdown title=" Add Layers" className="dropdown" drop="right">
+          
+          </NavDropdown>
+          );
+      } else {
+
+      
+      return (
+        
+        <NavDropdown title=" Add Layers" className="dropdown" drop="right">
+        {props.projects.map((value, index) => 
+        
+        <NavDropdown.Item 
+        key={`${index}`}
+        index={index}
+        title={value}>
+          {value}
+        </NavDropdown.Item>)}
+        <NavDropdown.Divider />
+        </NavDropdown>
+        );
+      }
+    }
+
     return (
       <>
         <div>
           <Navbar bg="light" expand="lg"> 
             <Navbar.Brand href="#home">
               </Navbar.Brand>
-            <Nav>
-             <ul>
+
+            <Nav>          
               <NavDropdown title="Layers" id="basic-nav-dropdown">
-                <NavDropdown.Item id="AddLayer" href="#addlayer" onClick={(e) => this.loadLayer(e)} onHover >
-                  Add Layer                
-                  </NavDropdown.Item>
+              <CustomMenu projects={this.state.projectArr}/>
                 <NavDropdown.Divider />
                 <NavDropdown.Item href="#action/3.4">Remove layer</NavDropdown.Item>
-              </NavDropdown> 
-              </ul>       
+              </NavDropdown>
             </Nav>
             <Nav>
               <NavDropdown title="Help" id="basic-nav-dropdown">
@@ -563,3 +613,30 @@ class App extends Component {
   }
 }
 export default App;
+
+class SubMenu extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {projects : null};
+  }
+
+  //this.setState({projects: this.props.projects});
+
+  render() {
+      console.log("hover");
+      return (
+        <NavDropdown title=" Add Layers" className="dropdown" drop="right">
+        {this.state.projects.map((value, index) => 
+        
+        <NavDropdown.Item 
+        key={`${index}`}
+        index={index}
+        title={value}>
+          {value}
+        </NavDropdown.Item>)}
+        <NavDropdown.Divider />
+        </NavDropdown>
+        );
+             
+    }
+}
