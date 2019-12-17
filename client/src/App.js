@@ -1,20 +1,16 @@
-import React, { Component} from 'react';
+import React from 'react';
 import { Map, TileLayer, Marker, Popup}  from 'react-leaflet';
-import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form, Popover, Overlay, Dropdown}  from 'react-bootstrap';
+import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form}  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
 import Cookies from 'js-cookie';
 
-const cookies = new Cookies();
-
-class App extends Component {
+class App extends React.Component {
 
   constructor(props) {
-    const userInput = React.createRef(); 
-    const passwordInput = React.createRef(); 
     
-    const osmURL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
-    const mapBoxURL = "//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg";
+    //const osmURL = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+    //const mapBoxURL = "//api.mapbox.com/styles/v1/mapbox/satellite-streets-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoibWp3eW55YXJkIiwiYSI6ImNrM3Q5cDB5ZDAwbG0zZW82enhnamFoN3cifQ.6tHRp0DztZanCDTnEuZJlg";
     super(props);
     const user = this.getUser();
     const loginModal = this.getLoginModal(user);
@@ -58,13 +54,11 @@ class App extends Component {
   }
 
   getProjects() {
-    const cookie = Cookies.get('projects');
-    console.log("getting projects")
+    let cookie = Cookies.get('projects');
     if (cookie === undefined) {
       return [];
-      //console.log("Cookies " + cookie);
     } else {
-      return cookie;
+      return JSON.parse(cookie);
     }    
   }
   /**
@@ -163,16 +157,7 @@ class App extends Component {
     let priorities = [];
     let size = [];
     for (var i = 0; i < data.length; i++) {
-      const photo = data[i].photoid;
-      const gid = data[i].gid;
-      const roadid = data[i].roadid;
-      const carriageway = data[i].carriagewa;
-      const location = data[i].location;
-      const fault = data[i].fault;
-      const size = data[i].size;
-      const priority = data[i].priority;
-      const datetime = data[i].faulttime;
-      let obj = new Object()
+      let obj = {};
       obj = {
         gid: data[i].gid,
         roadid: data[i].roadid,
@@ -184,10 +169,10 @@ class App extends Component {
         photo: data[i].photoid,
         datetime: data[i].faulttime
       };
-      faults.push(fault);
-      photos.push(photo);
+      faults.push( data[i].fault);
+      photos.push(data[i].photoid);
       objData.push(obj);
-      priorities.push(priority);
+      priorities.push(data[i].priority);
       const position = JSON.parse(data[i].st_asgeojson);
       const lng = position.coordinates[0];
       const lat = position.coordinates[1];
@@ -207,6 +192,7 @@ class App extends Component {
    * @param {the number to pad} n 
    * @param {the amount of pading} width 
    * @param {digit to pad out number with (default '0'} z 
+   * @return {the padded number (string)}
    */
   pad(n, width, z) {
     z = z || '0';
@@ -246,7 +232,7 @@ class App extends Component {
 
   getPhoto(direction) {
     let photo = this.state.currentPhoto;
-    let suffix = photo.slice(photo.length - 5, photo.length);
+    //let suffix = photo.slice(photo.length - 5, photo.length);
     let intSuffix = (parseInt(photo.slice(photo.length - 5, photo.length)));
     let n = null;
     if (direction === "prev") {
@@ -295,7 +281,7 @@ class App extends Component {
     const index = marker.options.index;
     let obj = this.state.objData[index];
     this.setState({index: index});
-    const data = marker.options.data
+    //const data = marker.options.data
     const photo = this.state.photos[index]
     const url = this.state.amazon + photo + ".jpg";
     this.setState({photourl: url});
@@ -323,8 +309,7 @@ class App extends Component {
       headers: {
         "authorization": this.state.token,
         'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        
+        'Content-Type': 'application/json',        
       },
       body: JSON.stringify({
         user: this.state.login,
@@ -348,8 +333,6 @@ class App extends Component {
 
   async login(e) {
     this.setState({showLogin: false});
-    const user = this.userInput.value;
-    const key = this.passwordInput.value;
     const response = await fetch('http://localhost:5000/login', {
       method: 'POST',
       credentials: 'same-origin',
@@ -364,10 +347,11 @@ class App extends Component {
         key: this.passwordInput.value
       })
     });
+    const body = await response.json();
     if (response.status !== 200) {
       throw Error(body.message) 
     } 
-    const body = await response.json();
+    
     if (body.result) {
       Cookies.set('token', body.token, { expires: 7 })
       Cookies.set('user', body.user, { expires: 7 })
@@ -387,13 +371,13 @@ class App extends Component {
     for(var i = 0; i < projects.length; i += 1) {
       prj.push(projects[i].description + " " + projects[i].date);
     }
-    Cookies.set('projects', prj, { expires: 7 })
+    Cookies.set('projects', JSON.stringify(prj), { expires: 7 })
     this.setState({projectArr: prj});
-    console.log("ProjectArr: " + this.state.projectArr)
   }
 
   async loadLayer(e) {
-    if (this.state.login != "Login") {
+    console.log(e.target.title);
+    if (this.state.login !== "Login") {
         const response = await fetch('http://localhost:5000/layer', {
         method: 'POST',
         headers: {
@@ -429,7 +413,6 @@ class App extends Component {
   //RENDER
 
   render() {
-    console.log("render")
     const position = [this.state.location.lat, this.state.location.lng];
     const { markersData } = this.state.markersData;
     const { fault } = this.state.fault;
@@ -459,26 +442,29 @@ class App extends Component {
 
     const CustomMenu = function(props) {
       const p = props.projects;
-      console.log("Projects" + p);
+      const loadLayer = props.onClick;
       if (p === undefined) {
-        return (
-        
-          <NavDropdown title=" Add Layers" className="dropdown" drop="right">
-          
-          </NavDropdown>
+        console.log("Projects" + p);
+        return ( 
+ 
+          <NavDropdown.Item title=" Add Layers" className="dropdown">Add Layers
+          </NavDropdown.Item>
           );
-      } else {
-
-      
-      return (
-        
+        } else if(p.length === 0) {
+          return ( 
+ 
+            <NavDropdown.Item title=" Add Layers" className="dropdown">Add Layers
+            </NavDropdown.Item>
+            );
+    
+      } else {  
+      return (        
         <NavDropdown title=" Add Layers" className="dropdown" drop="right">
-        {props.projects.map((value, index) => 
-        
+        {props.projects.map((value, index) =>      
         <NavDropdown.Item 
         key={`${index}`}
         index={index}
-        title={value}>
+        title={value} onClick={(e) => loadLayer(e)}>
           {value}
         </NavDropdown.Item>)}
         <NavDropdown.Divider />
@@ -496,7 +482,7 @@ class App extends Component {
 
             <Nav>          
               <NavDropdown title="Layers" id="basic-nav-dropdown">
-              <CustomMenu projects={this.state.projectArr}/>
+              <CustomMenu projects={this.state.projectArr} onClick={(e) => this.loadLayer(e)}/>
                 <NavDropdown.Divider />
                 <NavDropdown.Item href="#action/3.4">Remove layer</NavDropdown.Item>
               </NavDropdown>
@@ -614,29 +600,29 @@ class App extends Component {
 }
 export default App;
 
-class SubMenu extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = {projects : null};
-  }
+// class SubMenu extends React.Component {
+//   constructor(props) {
+//     super(props)
+//     this.state = {projects : null};
+//   }
 
-  //this.setState({projects: this.props.projects});
+//   //this.setState({projects: this.props.projects});
 
-  render() {
-      console.log("hover");
-      return (
-        <NavDropdown title=" Add Layers" className="dropdown" drop="right">
-        {this.state.projects.map((value, index) => 
+//   render() {
+//       console.log("hover");
+//       return (
+//         <NavDropdown title=" Add Layers" className="dropdown" drop="right">
+//         {this.state.projects.map((value, index) => 
         
-        <NavDropdown.Item 
-        key={`${index}`}
-        index={index}
-        title={value}>
-          {value}
-        </NavDropdown.Item>)}
-        <NavDropdown.Divider />
-        </NavDropdown>
-        );
+//         <NavDropdown.Item 
+//         key={`${index}`}
+//         index={index}
+//         title={value}>
+//           {value}
+//         </NavDropdown.Item>)}
+//         <NavDropdown.Divider />
+//         </NavDropdown>
+//         );
              
-    }
-}
+//     }
+// }
