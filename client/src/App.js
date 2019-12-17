@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map, TileLayer, Marker, Popup}  from 'react-leaflet';
+import { Map, TileLayer, Marker, Popup, ScaleControl, ScaleControlProps}  from 'react-leaflet';
 import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form}  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
@@ -516,6 +516,7 @@ class App extends React.Component {
             url={"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
             zIndex={999}
           />
+          <ScaleControl/>
           <Image className="satellite" src={this.state.osmThumbnail} onClick={(e) => this.toogleMap(e)} thumbnail={true}/>
           {this.state.markersData.map((position, index) => 
           <Marker 
