@@ -42,6 +42,9 @@ class App extends React.Component {
       icon: this.getCustomIcon(),
       show: false,
       showLogin: false,
+      showContact: false,
+      showTerms: false,
+      showAbout: false,
       modalPhoto: null,
       popover: false,
       photourl: null,
@@ -295,10 +298,7 @@ class App extends React.Component {
     this.setState({currentPhoto: this.state.photos[index]})
   }
 
-  clickLogin(e) {
-    this.setState({showLogin: true});
-    
-  }
+  
 
   async logout(e) {
     //console.log("logout");
@@ -402,6 +402,27 @@ class App extends React.Component {
     }    
   }
 
+  clickLogin(e) {
+    this.setState({showLogin: true});   
+  }
+
+  clickAbout(e) {
+    this.setState({showAbout: true});  
+  }
+
+  clickTerms(e) {
+    this.setState({showTerms: true});  
+  }
+
+  clickContact(e) {
+    this.setState({showContact: true});  
+  }
+
+  clickClose(e) {
+    this.setState({showContact: false});
+    this.setState({showAbout: false});    
+    this.setState({showTerms: false});    
+  }
   /**
    * called when photoviewer closed
    */
@@ -434,8 +455,8 @@ class App extends React.Component {
         <Nav.Link  id="Login" href="#login" onClick={props.onClick}>{props.title} </Nav.Link>
       </Nav>);
       } else {
-        return(<Nav className="ml-auto"><NavDropdown title={props.title} id="basic-nav-dropdown">
-        <NavDropdown.Item href="#contact"  onClick={props.onClick}>Logout</NavDropdown.Item>
+        return(<Nav className="ml-auto"><NavDropdown className="navdropdown" title={props.title} id="basic-nav-dropdown">
+        <NavDropdown.Item className="navdropdownitem" href="#contact"  onClick={props.onClick}>Logout</NavDropdown.Item>
       </NavDropdown></Nav>);
       }
     }
@@ -447,21 +468,21 @@ class App extends React.Component {
         console.log("Projects" + p);
         return ( 
  
-          <NavDropdown.Item title=" Add Layers" className="dropdown">Add Layers
+          <NavDropdown.Item title=" Add Layers" className="dropdownitem">Add Layers
           </NavDropdown.Item>
           );
         } else if(p.length === 0) {
           return ( 
  
-            <NavDropdown.Item title=" Add Layers" className="dropdown">Add Layers
+            <NavDropdown.Item title=" Add Layers" className="dropdownitem">Add Layers
             </NavDropdown.Item>
             );
     
       } else {  
       return (        
-        <NavDropdown title=" Add Layers" className="dropdown" drop="right">
+        <NavDropdown title=" Add Layers" className="navdropdownitem" drop="right">
         {props.projects.map((value, index) =>      
-        <NavDropdown.Item 
+        <NavDropdown.Item className="navdropdownitem"
         key={`${index}`}
         index={index}
         title={value} onClick={(e) => loadLayer(e)}>
@@ -478,26 +499,34 @@ class App extends React.Component {
         <div>
           <Navbar bg="light" expand="lg"> 
             <Navbar.Brand href="#home">
+            <img
+                src="logo.png"
+                width="122"
+                height="58"
+                className="d-inline-block align-top"
+              />
               </Navbar.Brand>
-
             <Nav>          
-              <NavDropdown title="Layers" id="basic-nav-dropdown">
+              <NavDropdown className="navdropdown" title="Layers" id="basic-nav-dropdown">
               <CustomMenu projects={this.state.projectArr} onClick={(e) => this.loadLayer(e)}/>
                 <NavDropdown.Divider />
-                <NavDropdown.Item href="#action/3.4">Remove layer</NavDropdown.Item>
+                <NavDropdown.Item className="navdropdownitem" href="#action/3.4">Remove layer</NavDropdown.Item>
               </NavDropdown>
             </Nav>
             <Nav>
-              <NavDropdown title="Help" id="basic-nav-dropdown">
-                <NavDropdown.Item id="Documentation" href="#documentation" onClick={(e) => this.documentation(e)}>Documentation</NavDropdown.Item>
+              <NavDropdown className="navdropdown" title="Help" id="basic-nav-dropdown">
+                <NavDropdown.Item className="navdropdownitem" href="#terms" onClick={(e) => this.clickTerms(e)} >Terms of Use</NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item href="#contact" onClick={(e) => this.contact(e)} >Contact </NavDropdown.Item>
+                <NavDropdown.Item className="navdropdownitem" href="#contact" onClick={(e) => this.clickContact(e)} >Contact</NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item className="navdropdownitem" id="Documentation" href="#documentation" onClick={(e) => this.documentation(e)}>Documentation</NavDropdown.Item>
+                <NavDropdown.Divider />
+                <NavDropdown.Item className="navdropdownitem" href="#about" onClick={(e) => this.clickAbout(e)} >About</NavDropdown.Item>
+               
+                
               </NavDropdown>         
             </Nav>
-            <CustomNav title={this.state.login} onClick={this.state.loginModal} />
-            {/* <Nav className="ml-auto">
-              <Nav.Link  id="Login" href="#login" onClick={this.state.loginModal}>{this.state.login}</Nav.Link>
-            </Nav> */}
+            <CustomNav className="navdropdown" title={this.state.login} onClick={this.state.loginModal} />
           </Navbar>         
         </div>      
         <div className="map">
@@ -543,9 +572,45 @@ class App extends React.Component {
       )}      
       </Map>   
       </div>
+      <Modal className="termsModal" show={this.state.showTerms} size={'md'} centered={true}>
+        <Modal.Header>
+          <Modal.Title><h2>Road Inspection Viewer</h2></Modal.Title>
+        </Modal.Header>
+        <Modal.Body >	
+          By using this software you confirm you have read and agreed to the Onsite Developments Ltd. <a href={"https://osmium.nz/?#terms"}> Click for terms of use.</a><br></br>
+          All data on this site from Land Information New Zealand is made available under a Creative Commons Attribution Licence.<br></br>
+          <span >&copy; 2019 Onsite Developments Ltd. All rights reserved.</span><br></br>
+		    </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" type="submit" onClick={(e) => this.clickClose(e)}>
+              Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      <Modal className="aboutModal" show={this.state.showAbout} size={'md'} centered={true}>
+        <Modal.Header>
+          <Modal.Title><h2>About</h2> </Modal.Title>
+        </Modal.Header>
+        <Modal.Body >	
+          <b>Road Inspection Version 1.0</b><br></br>
+          Relased: 12/01/2020<br></br>
+          Company: Onsite Developments Ltd.<br></br>
+          Software Developer: Matt Wynyard <br></br>
+          <img src="logo192.png" width="24" height="24"/> React: 16.12.0<br></br>
+          <img src="bootstrap.png" width="24" height="24"/> Bootstrap: 4.4.0<br></br>
+          <img src="leafletlogo.png" width="60" height="16"/>Leaflet: 1.6.0<br></br>
+          <img src="reactbootstrap.png" width="24" height="24"/>React-bootstrap: 1.0.0-beta.16<br></br>
+          React-leaflet: 2.6.0<br></br>
+		    </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" size='sm' type="submit" onClick={(e) => this.clickClose(e)}>
+            Close
+          </Button>
+        </Modal.Footer>
+      </Modal>
       <Modal show={this.state.showLogin} size={'sm'} centered={true}>
         <Modal.Header>
-          <Modal.Title>Login</Modal.Title>
+          <Modal.Title><img src="padlock.png" width="42" height="42"/> Login </Modal.Title>
         </Modal.Header>
         <Modal.Body >	
         <Form>
@@ -601,29 +666,3 @@ class App extends React.Component {
 }
 export default App;
 
-// class SubMenu extends React.Component {
-//   constructor(props) {
-//     super(props)
-//     this.state = {projects : null};
-//   }
-
-//   //this.setState({projects: this.props.projects});
-
-//   render() {
-//       console.log("hover");
-//       return (
-//         <NavDropdown title=" Add Layers" className="dropdown" drop="right">
-//         {this.state.projects.map((value, index) => 
-        
-//         <NavDropdown.Item 
-//         key={`${index}`}
-//         index={index}
-//         title={value}>
-//           {value}
-//         </NavDropdown.Item>)}
-//         <NavDropdown.Divider />
-//         </NavDropdown>
-//         );
-             
-//     }
-// }

@@ -2,7 +2,6 @@ body {
   margin: 0px;
   width: 100vw;
   height: 90vh;
-  /* background-color: white; */
 }
 
 #root {
@@ -17,8 +16,8 @@ body {
   margin-bottom: 0;
   
   border: 0;
-  font-size: 18px !important;
-  line-height: 1.5 !important;
+  font-size: 22px !important;
+  line-height: 2.0 !important;
   letter-spacing: 5px;
   border-radius: 0;
 }
@@ -38,6 +37,24 @@ body {
   z-index: 999;
   float: left;
 
+}
+
+.aboutModal {
+  margin: 10x;
+  font-family: "Century Gothic", sans-serif;
+}
+
+.termsModal {
+  margin: 10x;
+  font-family: "Century Gothic", sans-serif;
+}
+
+.navdropdown {
+  font-size: 22px !important;
+}
+
+.navdropdownitem {
+  font-size: 18px !important;
 }
 
 .dropdown{
