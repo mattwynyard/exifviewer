@@ -72,7 +72,8 @@ app.post('/login', async (request, response, next) => {
           }
         );
         
-      } else {       
+      } else {    
+        console.log("Incorrect password")   
         response.send({ result: false });
       }
     }); 
@@ -100,6 +101,23 @@ app.post('/layer', async (req, res, next) => {
   if (result) {
     var layer = req.body.menu;
     var geometry = await db.layer(layer);
+    //console.log(geometry.rows);
+    res.set('Content-Type', 'application/json')
+    res.send(geometry.rows);
+  } else {
+    console.log("Resource unavailable")
+    next();
+  }
+  
+});
+
+app.post('/roads', async (req, res, next) => {
+  console.log(req.body);
+  const result = users.findUserToken(req.headers.authorization, req.body.user);
+  const code = req.body.code;
+  if (result) {
+    var layer = req.body.menu;
+    var geometry = await db.road(code);
     //console.log(geometry.rows);
     res.set('Content-Type', 'application/json')
     res.send(geometry.rows);
