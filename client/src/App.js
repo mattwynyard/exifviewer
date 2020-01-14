@@ -4,10 +4,11 @@ import {LeafletPolyline} from 'react-leaflet-polyline'
 import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form}  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
-import './canvasoverlay.js';
+import RoadPolyline from './RoadPolyline.js';
+//import './canvasoverlay.js';
 import Cookies from 'js-cookie';
-import './WebGL.js';
-import CanvasLayer from './canvaslayer.js';
+//import './WebGL.js';
+//import CanvasLayer from './canvaslayer.js';
 
 class App extends React.Component {
 
@@ -146,175 +147,7 @@ class App extends React.Component {
     this.callBackendAPI()
     .catch(err => console.log(err));
     this.map = this.map.leafletElement;
-    L.canvasLayer = function() {
-      return new CanvasLayer();
-    };
-    console.log(this.map.getSize());
-    let cl = L.canvasLayer();
-    this.glLayer = cl.delegate(this).addTo(this.map);
-    this.canvas = this.glLayer._canvas
-    // this.glLayer = L.canvasOverlay()
-    //      .drawing(this.drawingOnCanvas)   // set drawing function
-    //      .addTo(this.map);         // add this layer to leaflet map
-
-    // this.canvas = this.glLayer.canvas();
-    // console.log(this.glLayer.canvas.width = this.canvas.clientWidth);
-    // console.log(this.glLayer.canvas.height = this.canvas.clientHeight);
-
-    this.gl = this.canvas.getContext('experimental-webgl', { antialias: true });
-    
-
-    var pixelsToWebGLMatrix = new Float32Array(16);
-    this.mapMatrix = new Float32Array(16);
-    var program = this.gl.createProgram();
-    this.gl.linkProgram(program);
-    this.gl.useProgram(program);
-
-    this.gl.blendFunc(this.gl.SRC_ALPHA, this.gl.ONE_MINUS_SRC_ALPHA);
-    this.gl.enable(this.gl.BLEND);
-    var u_matLoc = this.gl.getUniformLocation(program, "u_matrix");
-    var colorLoc = this.gl.getAttribLocation(program, "a_color");
-    var vertLoc = this.gl.getAttribLocation(program, "a_vertex");
-    this.gl.aPointSize = this.gl.getAttribLocation(program, "a_pointSize");
-    this.gl.aPointSize = 100;
-    pixelsToWebGLMatrix.set([2 / this.canvas.width, 0, 0, 0, 0, -2 / this.canvas.height, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]);
-    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-
-    this.gl.uniformMatrix4fv(u_matLoc, false, pixelsToWebGLMatrix);
-
-    var verts = [];
-    const data = [[-37,175]];
-    var d = data;
-    for (var i = 0; i < data.length; i += 1) {
-        let pixel = this.LatLongToPixelXY(data[i][0], data[i][1]);
-        console.log(pixel);
-      //-- 2 coord, 3 rgb colors interleaved buffer
-      verts.push(pixel.x, pixel.y, 0, 0, 0);
-    }
-
-        // //numPoints = data.length ;
-
-    var vertBuffer = this.gl.createBuffer();
-    var vertArray = new Float32Array(verts);
-    var fsize = vertArray.BYTES_PER_ELEMENT;
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, vertBuffer);
-    this.gl.bufferData(this.gl.ARRAY_BUFFER, vertArray, this.gl.STATIC_DRAW);
-    this.gl.vertexAttribPointer(vertLoc, 2, this.gl.FLOAT, false,fsize*5,0);
-    this.gl.enableVertexAttribArray(vertLoc);
-        // // -- offset for color buffer
-    this.gl.vertexAttribPointer(colorLoc, 3, this.gl.FLOAT, false, fsize*5, fsize*2);
-    this.gl.enableVertexAttribArray(colorLoc);
-
-    //this.glLayer.redraw();
-    if (this.gl == null) return;
-
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-
-
-    pixelsToWebGLMatrix.set([2 / this.canvas.width, 0, 0, 0, 0, -2 / this.canvas.height, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]);
-    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-
-
-
-    var pointSize = Math.max(this.map.getZoom() - 4.0, 1.0);
-    console.log("pointsize " + pointSize);
-    this.gl.vertexAttrib1f(this.gl.aPointSize, pointSize);
-
-    // // -- set base matrix to translate canvas pixel coordinates -> webgl coordinates
-    this.mapMatrix.set(pixelsToWebGLMatrix);
-
-    var bounds = this.map.getBounds();
-    var topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
-    var offset = this.LatLongToPixelXY(topLeft.lat, topLeft.lng);
-
-    // // -- Scale to current zoom
-    var scale = Math.pow(2, this.map.getZoom());
-    this.scaleMatrix(this.mapMatrix, scale, scale);
-
-    this.translateMatrix(this.mapMatrix, -offset.x, -offset.y);
-
-    // // -- attach matrix value to 'mapMatrix' uniform in shader
-    this.gl.uniformMatrix4fv(this.u_matLoc, false, this.mapMatrix);
-    this.gl.drawArrays(this.gl.POINTS, 0, data.length);
-    //this.glLayer.redraw();
   }
-
-    // Returns a random integer from 0 to range - 1.
-    randomInt(range) {
-    return Math.floor(Math.random() * range);
-    }
-
-      // -- converts latlon to pixels at zoom level 0 (for 256x256 tile size) , inverts y coord )
-      // -- source : http://build-failed.blogspot.cz/2013/02/displaying-webgl-data-on-google-maps.html
-
-  LatLongToPixelXY(latitude, longitude) {
-      var pi_180 = Math.PI / 180.0;
-      var pi_4 = Math.PI * 4;
-      var sinLatitude = Math.sin(latitude * pi_180);
-      var pixelY = (0.5 - Math.log((1 + sinLatitude) / (1 - sinLatitude)) / (pi_4)) * 256;
-      var pixelX = ((longitude + 180) / 360) * 256;
-
-      var pixel = { x: pixelX, y: pixelY };
-
-      return pixel;
-  }
-
-  translateMatrix(matrix, tx, ty) {
-      // translation is in last column of matrix
-      matrix[12] += matrix[0] * tx + matrix[4] * ty;
-      matrix[13] += matrix[1] * tx + matrix[5] * ty;
-      matrix[14] += matrix[2] * tx + matrix[6] * ty;
-      matrix[15] += matrix[3] * tx + matrix[7] * ty;
-  }
-
-  scaleMatrix(matrix, scaleX, scaleY) {
-      // scaling x and y, which is just scaling first two columns of matrix
-      matrix[0] *= scaleX;
-      matrix[1] *= scaleX;
-      matrix[2] *= scaleX;
-      matrix[3] *= scaleX;
-
-      matrix[4] *= scaleY;
-      matrix[5] *= scaleY;
-      matrix[6] *= scaleY;
-      matrix[7] *= scaleY;
-  }
-         
-  drawingOnCanvas(canvasOverlay, params) {
-    console.log("drawing");
-    if (this.gl == null) return;
-
-    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
-
-
-    this.pixelsToWebGLMatrix.set([2 / this.canvas.width, 0, 0, 0, 0, -2 / this.canvas.height, 0, 0, 0, 0, 0, 0, -1, 1, 0, 1]);
-    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
-
-
-
-    var pointSize = Math.max(this.map.getZoom() - 4.0, 1.0);
-    console.log("pointsize " + pointSize);
-    this.gl.vertexAttrib1f(this.gl.aPointSize, pointSize);
-
-    // -- set base matrix to translate canvas pixel coordinates -> webgl coordinates
-    this.mapMatrix.set(this.pixelsToWebGLMatrix);
-
-    var bounds = this.map.getBounds();
-    var topLeft = new L.LatLng(bounds.getNorth(), bounds.getWest());
-    var offset = this.LatLongToPixelXY(topLeft.lat, topLeft.lng);
-
-    // -- Scale to current zoom
-    var scale = Math.pow(2, this.map.getZoom());
-    this.scaleMatrix(this.mapMatrix, scale, scale);
-
-    this.translateMatrix(this.mapMatrix, -offset.x, -offset.y);
-
-    // -- attach matrix value to 'mapMatrix' uniform in shader
-    this.gl.uniformMatrix4fv(this.u_matLoc, false, this.mapMatrix);
-    this.gl.drawArrays(this.gl.POINTS, 0, this.data.length);
-
-}
 
 
   componentDidUpdate() {   
@@ -377,7 +210,8 @@ class App extends React.Component {
     let lineData = [];
     console.log(data.length);
     for (var i = 0; i < data.length; i++) {
-      const linestring = JSON.parse(data[i].st_asgeojson);    
+      const linestring = JSON.parse(data[i].st_asgeojson); 
+      //console.log(linestring);   
       if(linestring !== null) {
         var points = [];
         //console.log("new segment");
@@ -391,7 +225,7 @@ class App extends React.Component {
       lineData.push(points);
     }
     let polylines  = [];
-    console.log(lineData);
+    //console.log(lineData);
     this.setState({centreData: lineData});
   }
 
@@ -661,6 +495,10 @@ class App extends React.Component {
     this.setState({popover: false});
   }
 
+  getColor() {
+    //console.log("Hello");
+    return '#' +  Math.random().toString(16).substr(-6);
+  }
   //RENDER
 
   render() {
@@ -783,13 +621,14 @@ class App extends React.Component {
           <ScaleControl/>
           <Image className="satellite" src={this.state.osmThumbnail} onClick={(e) => this.toogleMap(e)} thumbnail={true}/>
           {this.state.centreData.map((latlngs, index) => 
-          <Polyline 
+          <RoadPolyline 
             key={`${index}`}
-            weight={1}
-            color={'blue'} 
+            weight={3}
+            // color={'blue'} 
+            color={this.getColor()}
             smoothFactor={3}
             positions={latlngs}>
-          </Polyline>
+          </RoadPolyline>
           )}
           {this.state.markersData.map((position, index) => 
           <Marker 
