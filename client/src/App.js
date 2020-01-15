@@ -1,14 +1,9 @@
 import React from 'react';
-import { Map, TileLayer, Marker, Polyline, Popup, ScaleControl, ScaleControlProps}  from 'react-leaflet';
-import {LeafletPolyline} from 'react-leaflet-polyline'
+import { Map, TileLayer, Marker, Polyline, Popup, ScaleControl, LayersControl, LayerGroup}  from 'react-leaflet';
 import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form}  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
-import RoadPolyline from './RoadPolyline.js';
-//import './canvasoverlay.js';
 import Cookies from 'js-cookie';
-//import './WebGL.js';
-//import CanvasLayer from './canvaslayer.js';
 
 class App extends React.Component {
 
@@ -20,11 +15,7 @@ class App extends React.Component {
     const user = this.getUser();
     const loginModal = this.getLoginModal(user);
     const projects =  this.getProjects();
-    const gl = null;
-    const canvas = null;
-    const map = null;
-    const glLayer = null;
-    let mapMatrix = null;
+    
 
     this.state = {
       location: {
@@ -39,7 +30,7 @@ class App extends React.Component {
       osmThumbnail: "satellite64.png",
       mode: "map",
       zoom: 8,
-      index: 0,
+      index: null,
       markersData: [],
       centreData: [],
       objData: [],
@@ -67,6 +58,8 @@ class App extends React.Component {
     };
     
   }
+
+ 
 
   getProjects() {
     let cookie = Cookies.get('projects');
@@ -98,6 +91,7 @@ class App extends React.Component {
   }
 
   getCustomIcon(data, zoom) {
+    //console.log("data" + data);
     let icon = null;
     const size = this.getSize(zoom);
     if (data === "5") {
@@ -198,12 +192,13 @@ class App extends React.Component {
       let latlng = L.latLng(lat, lng);
       markersData.push(latlng);     
     }
-    this.setState({markersData: markersData});
-    this.setState({fault: faults});
-    this.setState({photos: photos});
-    this.setState({sizes: size});
-    this.setState({priority: priorities});
+    //this.setState({index: 0});
     this.setState({objData: objData});
+    this.setState({markersData: markersData});
+    //this.setState({photos: photos});
+    //this.setState({sizes: size});
+    //this.setState({priority: priorities});
+    
   }
 
   addCentrelines(data) {
@@ -269,11 +264,15 @@ class App extends React.Component {
   }
 
   clickImage(e) {    
+    console.log('click imge')
     this.setState({show: true});
+    let photo = this.getFault(this.state.index, 'photo');
+    this.setState({currentPhoto: photo});
   }
 
   getPhoto(direction) {
     let photo = this.state.currentPhoto;
+    //let photo = this.getFault(this.state.index, 'photo');
     //let suffix = photo.slice(photo.length - 5, photo.length);
     let intSuffix = (parseInt(photo.slice(photo.length - 5, photo.length)));
     let n = null;
@@ -293,18 +292,19 @@ class App extends React.Component {
    * 
    * @param {the fault object} obj 
    */
-  getFault(obj) {
-    let fault = [];
-    fault.push(obj.fault)
-    fault.push(obj.priority);
-    fault.push(obj.location);
-    fault.push(obj.size);
-    fault.push(obj.datetime);
-    return fault;
-  }
+  // getFault(obj) {
+  //   let fault = [];
+  //   fault.push(obj.fault)
+  //   fault.push(obj.priority);
+  //   fault.push(obj.location);
+  //   fault.push(obj.size);
+  //   fault.push(obj.datetime);
+  //   return fault;
+  // }
 
   clickPrev(e) {
   const newPhoto = this.getPhoto("prev");
+  console.log(newPhoto);
   this.setState({currentPhoto: newPhoto});
 	const url = this.state.amazon + newPhoto + ".jpg";
   this.setState({photourl: url});
@@ -318,23 +318,10 @@ class App extends React.Component {
   }
 
   clickMarker(e) {
-    var marker = e.target;
-    let fault = [];
+    let marker = e.target;
     const index = marker.options.index;
-    let obj = this.state.objData[index];
     this.setState({index: index});
-    //const data = marker.options.data
-    const photo = this.state.photos[index]
-    const url = this.state.amazon + photo + ".jpg";
-    this.setState({photourl: url});
-    fault.push(this.state.fault[index])
-    fault.push(obj.priority);
-    fault.push(obj.location);
-    fault.push(obj.size);
-    fault.push(obj.datetime);
-    this.setState({currentFault: fault});
     this.setState({popover: true});
-    this.setState({currentPhoto: this.state.photos[index]})
   }
 
   async logout(e) {
@@ -499,6 +486,34 @@ class App extends React.Component {
     //console.log("Hello");
     return '#' +  Math.random().toString(16).substr(-6);
   }
+/**
+ * gets the requested attribute from the fault object array
+ * @param {the index of marker} index 
+ * @param {the property of the fault} attribute 
+ */
+  getFault(index, attribute) {
+    if (this.state.objData.length !== 0 && index !== null) {
+      switch(attribute) {
+        case "fault":
+          return  this.state.objData[index].fault;
+        case "priority":
+          //console.log(this.state.objData[index].priority);
+          return  this.state.objData[index].priority;
+        case "location":
+        return  this.state.objData[index].location;
+        case "size":
+        return  this.state.objData[index].size;
+        case "datetime":
+          return  this.state.objData[index].datetime;
+        case "photo":
+        return  this.state.objData[index].photo;
+        default:
+          return null;
+      }
+    } else {
+      return null;
+    }
+  }
   //RENDER
 
   render() {
@@ -509,6 +524,7 @@ class App extends React.Component {
     const { fault } = this.state.fault;
     const { photo } = this.state.photos;      
     const handleClose = () => this.setState({show: false});
+    const priority = null;
 
     const CustomTile = function CustomTile (props) {
         return (
@@ -565,8 +581,7 @@ class App extends React.Component {
     }
 
     return (
-      <>
-      
+      <>     
         <div>
           <Navbar bg="light" expand="lg"> 
             <Navbar.Brand href="#home">
@@ -594,9 +609,7 @@ class App extends React.Component {
                 <NavDropdown.Divider />
                 <NavDropdown.Item className="navdropdownitem" id="Documentation" href="#documentation" onClick={(e) => this.documentation(e)}>Documentation</NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item className="navdropdownitem" href="#about" onClick={(e) => this.clickAbout(e)} >About</NavDropdown.Item>
-               
-                
+                <NavDropdown.Item className="navdropdownitem" href="#about" onClick={(e) => this.clickAbout(e)} >About</NavDropdown.Item>             
               </NavDropdown>         
             </Nav>
             <CustomNav className="navdropdown" title={this.state.login} onClick={this.state.loginModal} />
@@ -620,39 +633,52 @@ class App extends React.Component {
           />
           <ScaleControl/>
           <Image className="satellite" src={this.state.osmThumbnail} onClick={(e) => this.toogleMap(e)} thumbnail={true}/>
+          <LayersControl position="topright">
+          <LayersControl.Overlay checked name="state highway">
+          <LayerGroup>
           {this.state.centreData.map((latlngs, index) => 
-          <RoadPolyline 
+          <Polyline 
             key={`${index}`}
             weight={3}
-            // color={'blue'} 
+            //color={'blue'} 
             color={this.getColor()}
             smoothFactor={3}
             positions={latlngs}>
-          </RoadPolyline>
+          </Polyline>
           )}
+          </LayerGroup>
+          </LayersControl.Overlay>
+           <LayersControl.Overlay checked name="first layer">
+          <LayerGroup>
           {this.state.markersData.map((position, index) => 
+          
           <Marker 
             key={`${index}`}
             index={index}
             data={fault}
             photo={photo}
             position={position} 
-            icon={this.getCustomIcon(this.state.priority[index], this.state.zoom)}
+            icon={this.getCustomIcon(this.getFault(index, 'priority'), this.state.zoom)}
             draggable={false} 
             onClick={(e) => this.clickMarker(e)}				  
             >
+
             <Popup className="popup">
             <div>
               <p className="faulttext">
-                <b>{"Type: "}</b> {this.state.currentFault[0]} <br></br> <b>{"Priority: "} </b> {this.state.currentFault[1]} <br></br><b>{"Location: "} </b> {this.state.currentFault[2]}
+                <b>{"Type: "}</b> {this.getFault(index, 'fault')} <br></br> <b>{"Priority: "} </b> {this.getFault(index, 'priority')} <br></br><b>{"Location: "} </b> {this.getFault(index, 'location')}
               </p>
               <div>
-              <Image className="thumbnail" src={this.state.photourl} photo={photo} onClick={(e) => this.clickImage(e)} thumbnail={true}></Image >
+              <Image className="thumbnail" src={this.state.amazon + this.getFault(index, 'photo') + ".jpg"} photo={photo} onClick={(e) => this.clickImage(e)} thumbnail={true}></Image >
               </div>          
             </div>
             </Popup>  
           </Marker>
-      )}      
+      )}     
+      </LayerGroup>
+</LayersControl.Overlay>
+          </LayersControl>
+          
       </Map>   
       </div>
       <Modal className="termsModal" show={this.state.showTerms} size={'md'} centered={true}>
@@ -720,14 +746,14 @@ class App extends React.Component {
         <div className="container">
               <div className="row">
               <div className="col-md-6">
-                  <b>{"Type: "}</b> {this.state.currentFault[0]} <br></br> <b>{"Priority: "} </b> {this.state.currentFault[1]} <br></br><b>{"Location: "} </b> {this.state.currentFault[2]}
+                  <b>{"Type: "}</b> {this.getFault(this.state.index, 'fault')} <br></br> <b>{"Priority: "} </b> {this.getFault(this.state.index, 'priority')} <br></br><b>{"Location: "} </b> {this.getFault(this.state.index, 'priority')}
               </div>
               <div className="col-md-6">
-                <b>{"Size: "}</b> {this.state.currentFault[3]} <br></br> <b>{"DateTime: "} </b> {this.state.currentFault[4]}
+                <b>{"Size: "}</b> {this.getFault(this.state.index, 'size')} <br></br> <b>{"DateTime: "} </b> {this.getFault(this.state.index, 'datetime')}
               </div>
               </div>
             </div>	
-		      <Image className="photo" src={this.state.photourl} data={fault} onClick={(e) => this.clickImage(e)} thumbnail></Image >		
+		      <Image className="photo" src={this.state.amazon + this.state.currentPhoto + ".jpg"} data={fault} onClick={(e) => this.clickImage(e)} thumbnail></Image >		
 		    </Modal.Body >
         <Modal.Footer>
 		      <Button className="prev" onClick={(e) => this.clickPrev(e)}> 

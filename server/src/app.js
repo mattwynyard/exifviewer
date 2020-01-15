@@ -96,7 +96,7 @@ app.post('/logout', (req, res, next) => {
 });
 
 app.post('/layer', async (req, res, next) => {
-  //console.log(req.headers.authorization);
+  console.log(req.headers.authorization);
   const result = users.findUserToken(req.headers.authorization, req.body.user);
   if (result) {
     var layer = req.body.menu;
