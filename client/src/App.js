@@ -288,20 +288,6 @@ class App extends React.Component {
     return newPhoto;
   }
 
-  /**
-   * 
-   * @param {the fault object} obj 
-   */
-  // getFault(obj) {
-  //   let fault = [];
-  //   fault.push(obj.fault)
-  //   fault.push(obj.priority);
-  //   fault.push(obj.location);
-  //   fault.push(obj.size);
-  //   fault.push(obj.datetime);
-  //   return fault;
-  // }
-
   clickPrev(e) {
   const newPhoto = this.getPhoto("prev");
   console.log(newPhoto);
@@ -377,12 +363,12 @@ class App extends React.Component {
     } 
     
     if (body.result) {
+      console.log("Login succeded");
       Cookies.set('token', body.token, { expires: 7 })
       Cookies.set('user', body.user, { expires: 7 })
       this.setState({login: body.user});
       this.setState({token: body.token});
-      this.setState({loginModal: (e) => this.logout(e)});
-      
+      this.setState({loginModal: (e) => this.logout(e)});      
       this.buildProjects(body.projects);
       
     } else {
@@ -400,7 +386,7 @@ class App extends React.Component {
   }
 
   async loadLayer(e) {
-    console.log(e.target.title);
+    console.log("token: " + this.state.token);
     if (this.state.login !== "Login") {
         const response = await fetch('http://localhost:5000/layer', {
         method: 'POST',

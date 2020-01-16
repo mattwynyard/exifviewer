@@ -60,7 +60,7 @@ app.post('/login', async (request, response, next) => {
         this.token = token;
         let projects = await db.projects(user);
         let arr = [];
-        console.log(projects.rows.length);
+        console.log("login: " + user);
         for (var i = 0; i < projects.rows.length; i += 1) {
           arr.push(projects.rows[i]);
         }
@@ -71,6 +71,7 @@ app.post('/login', async (request, response, next) => {
           token: token,
           }
         );
+        users.printUsers();
         
       } else {    
         console.log("Incorrect password")   
@@ -96,8 +97,10 @@ app.post('/logout', (req, res, next) => {
 });
 
 app.post('/layer', async (req, res, next) => {
-  console.log(req.headers.authorization);
+  //console.log(req.headers.authorization);
+  //console.log(req.body.user);
   const result = users.findUserToken(req.headers.authorization, req.body.user);
+  //console.log("result: " + result);
   if (result) {
     var layer = req.body.menu;
     var geometry = await db.layer(layer);
