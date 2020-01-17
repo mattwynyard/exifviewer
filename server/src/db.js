@@ -35,11 +35,13 @@ module.exports = {
 
     road: (code) => { 
         return new Promise((resolve, reject) => {
-            connection.query("SELECT gid, assetroadi, carriagewa, fullroadna, tacode, ST_AsGeoJSON(geom) FROM roads", (err, result) => {
+            console.log("SELECT gid, assetroadi, carriagewa, fullroadna, tacode, ST_AsGeoJSON(geom) FROM roads WHERE tacode = '" + code + "'");
+            connection.query("SELECT gid, assetroadi, carriagewa, fullroadna, tacode, ST_AsGeoJSON(geom) FROM roads WHERE tacode = '" + code + "'", (err, result) => {
                 if (err) {
                     console.error('Error executing query', err.stack)
                     return reject(err);
                 }
+                console.log(result);
                 var geometry = resolve(result);
                 return geometry;
             });

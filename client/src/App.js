@@ -151,7 +151,7 @@ class App extends React.Component {
 
 
   callBackendAPI = async () => {
-    const response = await fetch('http://localhost:5000/api') 
+    const response = await fetch('http://osmium.nz/api') 
     const body = await response.json();
     console.log(body.express)
     if (response.status !== 200) {
@@ -220,7 +220,7 @@ class App extends React.Component {
       lineData.push(points);
     }
     let polylines  = [];
-    //console.log(lineData);
+    console.log(lineData);
     this.setState({centreData: lineData});
   }
 
@@ -313,7 +313,7 @@ class App extends React.Component {
   async logout(e) {
     //console.log("logout");
     console.log(this.state.login);
-    const response = await fetch('http://localhost:5000/logout', {
+    const response = await fetch('http://osmium.nz/logout', {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -343,7 +343,7 @@ class App extends React.Component {
 
   async login(e) {
     this.setState({showLogin: false});
-    const response = await fetch('http://localhost:5000/login', {
+    const response = await fetch('http://osmium.nz/login', {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -388,7 +388,7 @@ class App extends React.Component {
   async loadLayer(e) {
     console.log("token: " + this.state.token);
     if (this.state.login !== "Login") {
-        const response = await fetch('http://localhost:5000/layer', {
+        const response = await fetch('http://osmium.nz/layer', {
         method: 'POST',
         headers: {
           "authorization": this.state.token,
@@ -415,7 +415,7 @@ class App extends React.Component {
   async loadCentreline(e) {
     console.log(e.target.title);
     if (this.state.login !== "Login") {
-        const response = await fetch('http://localhost:5000/roads', {
+        const response = await fetch('http://osmium.nz/roads', {
         method: 'POST',
         headers: {
           "authorization": this.state.token,
@@ -423,7 +423,7 @@ class App extends React.Component {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          code: 900,
+          code: "900",
           menu: e.target.id,
           user: this.state.login
         })

@@ -24,6 +24,7 @@ app.use(bodyParser.urlencoded({ extended: false }))
 app.use(express.json());
 
 app.use((req, res, next) => {
+  //res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
   next();
@@ -64,6 +65,7 @@ app.post('/login', async (request, response, next) => {
         for (var i = 0; i < projects.rows.length; i += 1) {
           arr.push(projects.rows[i]);
         }
+        response.set('Content-Type', 'application/json')
         response.cookie('token', token, { maxAge: jwtExpirySeconds * 1000 })
         response.json({ result: true, user: user, token: token, projects: arr});
         users.addUser({
