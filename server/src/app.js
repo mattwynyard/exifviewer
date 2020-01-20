@@ -98,6 +98,23 @@ app.post('/logout', (req, res, next) => {
   // res.send({logout: true})
 });
 
+app.post('/filter', async (req, res, next) => {
+  console.log("logout");
+  
+  if (req.headers.authorization === this.token) {
+    var fclass = await db.class();
+    res.set('Content-Type', 'application/json')
+    res.send(fclass.rows);
+  } else {
+    console.log("invalid token");
+    res.send({success: false});
+  }
+  
+  // const user = req.body.user;
+  // console.log(user);
+  // res.send({logout: true})
+});
+
 app.post('/layer', async (req, res, next) => {
   //console.log(req.headers.authorization);
   //console.log(req.body.user);

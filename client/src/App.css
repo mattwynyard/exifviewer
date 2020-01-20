@@ -40,6 +40,11 @@ body {
 
 }
 
+.displaytype {
+  font-size: 18px !important;
+  left: 50px;
+}
+
 .aboutModal {
   margin: 10x;
   font-family: "Century Gothic", sans-serif;

@@ -11,7 +11,10 @@ const connection = new Pool({
     connectionTimeoutMillis: 2000,
 })
 connection.connect(function(err) {
-    if (err) throw err;
+    if (err) {
+        console.log(err);
+        throw err;
+    }
 });
 
 connection.on('connect', () => {
@@ -28,6 +31,21 @@ module.exports = {
                     return reject(err);
                 }
                 var project = resolve(result);
+                return project;
+            });
+        });
+    },
+
+    class: () => {
+        return new Promise((resolve, reject) => {
+            let sql = 'SELECT description FROM assetclass WHERE code IN (SELECT class FROM faults GROUP BY class)';
+            connection.query(sql, (err, result) => {
+                if (err) {
+                    console.error('Error executing query', err.stack)
+                    return reject(err);
+                }
+                var project = resolve(result);
+                console.log(project);
                 return project;
             });
         });
@@ -50,7 +68,7 @@ module.exports = {
 
     layer: (layer) => { 
         return new Promise((resolve, reject) => {
-            connection.query("SELECT gid, roadid, carriagewa, location, fault, size, priority, photoid, faulttime, ST_AsGeoJSON(geom) FROM faults", (err, result) => {
+            connection.query("SELECT roadid, carriagewa, location, fault, size, priority, photoid, faulttime, ST_AsGeoJSON(geom) FROM faults", (err, result) => {
                 if (err) {
                     console.error('Error executing query', err.stack)
                     return reject(err);

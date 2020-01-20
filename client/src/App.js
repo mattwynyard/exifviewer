@@ -1,6 +1,6 @@
 import React from 'react';
 import { Map, TileLayer, Marker, Polyline, Popup, ScaleControl, LayersControl, LayerGroup}  from 'react-leaflet';
-import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form}  from 'react-bootstrap';
+import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form, Dropdown}  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
 import Cookies from 'js-cookie';
@@ -15,6 +15,7 @@ class App extends React.Component {
     const user = this.getUser();
     const loginModal = this.getLoginModal(user);
     const projects =  this.getProjects();
+
     
 
     this.state = {
@@ -22,6 +23,7 @@ class App extends React.Component {
         lat: -41.2728,
         lng: 173.2995,
       },
+      host: 'localhost:5000',
       token: Cookies.get('token'),
       login: user,
       loginModal: loginModal,
@@ -50,16 +52,17 @@ class App extends React.Component {
       showAbout: false,
       modalPhoto: null,
       popover: false,
+      filter: false,
+      activeSelection: "Fault Type",
       photourl: null,
       amazon: "https:/taranaki.s3.ap-southeast-2.amazonaws.com/Roads/2019_11/",
       user: null,
       passowrd: null,
-      projectArr: projects
+      projectArr: projects,
+      class: []
     };
     
   }
-
- 
 
   getProjects() {
     let cookie = Cookies.get('projects');
@@ -151,7 +154,8 @@ class App extends React.Component {
 
 
   callBackendAPI = async () => {
-    const response = await fetch('http://osmium.nz/api') 
+    console.log('http://' + this.state.host + '/api');
+    const response = await fetch('http://' + this.state.host + '/api'); 
     const body = await response.json();
     console.log(body.express)
     if (response.status !== 200) {
@@ -313,7 +317,7 @@ class App extends React.Component {
   async logout(e) {
     //console.log("logout");
     console.log(this.state.login);
-    const response = await fetch('http://osmium.nz/logout', {
+    const response = await fetch('http://' + this.state.host + '/logout', {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -343,7 +347,7 @@ class App extends React.Component {
 
   async login(e) {
     this.setState({showLogin: false});
-    const response = await fetch('http://osmium.nz/login', {
+    const response = await fetch('http://' + this.state.host + '/login', {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -358,6 +362,7 @@ class App extends React.Component {
       })
     });
     const body = await response.json();
+    console.log(body);
     if (response.status !== 200) {
       throw Error(body.message) 
     } 
@@ -388,7 +393,7 @@ class App extends React.Component {
   async loadLayer(e) {
     console.log("token: " + this.state.token);
     if (this.state.login !== "Login") {
-        const response = await fetch('http://osmium.nz/layer', {
+        const response = await fetch('http://' + this.state.host + '/layer', {
         method: 'POST',
         headers: {
           "authorization": this.state.token,
@@ -396,8 +401,6 @@ class App extends React.Component {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          latitude: this.state.location.lat,
-          longitude: this.state.location.lng,
           menu: e.target.id,
           user: this.state.login
         })
@@ -415,7 +418,7 @@ class App extends React.Component {
   async loadCentreline(e) {
     console.log(e.target.title);
     if (this.state.login !== "Login") {
-        const response = await fetch('http://osmium.nz/roads', {
+        const response = await fetch('http://' + this.state.host + '/roads', {
         method: 'POST',
         headers: {
           "authorization": this.state.token,
@@ -439,6 +442,30 @@ class App extends React.Component {
     }    
   }
 
+  async loadFilters() {
+    if (this.state.login !== "Login") {
+      const response = await fetch('http://' + this.state.host + '/filter', {
+        method: 'POST',
+        headers: {
+          "authorization": this.state.token,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user: this.state.login
+        })
+      })
+      if (response.status !== 200) {
+        console.log(response.status);
+      } 
+      const classes = await response.json();
+      console.log(classes);
+      this.setState({class: classes});
+      //classes.map(classes => console.log(classes.description));
+
+    }
+  }
+
   clickLogin(e) {
     this.setState({showLogin: true});   
   }
@@ -460,12 +487,30 @@ class App extends React.Component {
     this.setState({showAbout: false});    
     this.setState({showTerms: false});    
   }
+
+  closeFilter() {
+    this.setState({filter: false});
+  }
   /**
    * called when photoviewer closed
    */
   closeModal() {
     this.setState({show: false});
     this.setState({popover: false});
+  }
+
+  clickFilter(e) {
+    this.setState({filter: true});
+    this.loadFilters();
+  }
+
+  setDisplay(e) {
+    console.log(e.target.id);
+    if(e.target.id === "priority") {
+      this.setState({activeSelection: "Priority"});
+    } else {
+      this.setState({activeSelection: "Fault Type"});
+    }
   }
 
   getColor() {
@@ -483,16 +528,15 @@ class App extends React.Component {
         case "fault":
           return  this.state.objData[index].fault;
         case "priority":
-          //console.log(this.state.objData[index].priority);
           return  this.state.objData[index].priority;
         case "location":
-        return  this.state.objData[index].location;
+          return  this.state.objData[index].location;
         case "size":
-        return  this.state.objData[index].size;
+          return  this.state.objData[index].size;
         case "datetime":
           return  this.state.objData[index].datetime;
         case "photo":
-        return  this.state.objData[index].photo;
+          return  this.state.objData[index].photo;
         default:
           return null;
       }
@@ -523,13 +567,15 @@ class App extends React.Component {
     const CustomNav = function customNav(props) {
       
       if (props.title === 'Login') {
-        return (<Nav className="ml-auto">
-        <Nav.Link  id="Login" href="#login" onClick={props.onClick}>{props.title} </Nav.Link>
-      </Nav>);
+        return (
+          <Nav className="ml-auto">
+            <Nav.Link  id="Login" href="#login" onClick={props.onClick}>{props.title} </Nav.Link>
+          </Nav>);
       } else {
-        return(<Nav className="ml-auto"><NavDropdown className="navdropdown" title={props.title} id="basic-nav-dropdown">
-        <NavDropdown.Item className="navdropdownitem" href="#contact"  onClick={props.onClick}>Logout</NavDropdown.Item>
-      </NavDropdown></Nav>);
+        return(
+        <Nav className="ml-auto"><NavDropdown className="navdropdown" title={props.title} id="basic-nav-dropdown">
+          <NavDropdown.Item className="navdropdownitem" href="#login"  onClick={props.onClick}>Logout</NavDropdown.Item>
+        </NavDropdown></Nav>);
       }
     }
 
@@ -537,32 +583,29 @@ class App extends React.Component {
       const p = props.projects;
       const loadLayer = props.onClick;
       if (p === undefined) {
-        console.log("Projects" + p);
+        //console.log("Projects" + p);
         return ( 
- 
-          <NavDropdown.Item title=" Add Layers" className="dropdownitem">Add Layers
+          <NavDropdown.Item title="Add Layers" className="dropdownitem">Add Layers
           </NavDropdown.Item>
           );
-        } else if(p.length === 0) {
-          return ( 
- 
-            <NavDropdown.Item title=" Add Layers" className="dropdownitem">Add Layers
-            </NavDropdown.Item>
-            );
-    
+      } else if(p.length === 0) {
+        return ( 
+          <NavDropdown.Item title="Add Layers" className="dropdownitem">Add Layers
+          </NavDropdown.Item>
+          );  
       } else {  
-      return (        
-        <NavDropdown title=" Add Layers" className="navdropdownitem" drop="right">
-        {props.projects.map((value, index) =>      
-        <NavDropdown.Item className="navdropdownitem"
-        key={`${index}`}
-        index={index}
-        title={value} onClick={(e) => loadLayer(e)}>
-          {value}
-        </NavDropdown.Item>)}
-        <NavDropdown.Divider />
-        </NavDropdown>
-        );
+        return (        
+          <NavDropdown title="Add Layers" className="navdropdownitem" drop="right">
+          {props.projects.map((value, index) =>      
+          <NavDropdown.Item className="navdropdownitem"
+          key={`${index}`}
+          index={index}
+          title={value} onClick={(e) => loadLayer(e)}>
+            {value}
+          </NavDropdown.Item>)}
+          <NavDropdown.Divider />
+          </NavDropdown>
+          );
       }
     }
 
@@ -580,11 +623,11 @@ class App extends React.Component {
               </Navbar.Brand>
             <Nav>          
               <NavDropdown className="navdropdown" title="Layers" id="basic-nav-dropdown">
-              <CustomMenu projects={this.state.projectArr} onClick={(e) => this.loadLayer(e)}/>
+                <CustomMenu className="navdropdownitem" projects={this.state.projectArr} onClick={(e) => this.loadLayer(e)}/>
                 <NavDropdown.Divider />
-                <NavDropdown.Item className="navdropdownitem" href="#action/3.4" onClick={(e) => this.loadCentreline(e)}>Add centreline </NavDropdown.Item>
+                <NavDropdown.Item className="navdropdownitem" href="#centreline" onClick={(e) => this.loadCentreline(e)}>Add centreline </NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item className="navdropdownitem" href="#action/3.4">Remove layer</NavDropdown.Item>
+                <NavDropdown.Item className="navdropdownitem" href="#filter"  onClick={(e) => this.clickFilter(e)}>Filter Layer</NavDropdown.Item>
               </NavDropdown>
             </Nav>
             <Nav>
@@ -617,6 +660,10 @@ class App extends React.Component {
             url={"https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"}
             zIndex={999}
           />
+           <NavDropdown className="displaytype" id="dropdown-basic-button" title={this.state.activeSelection}>
+            <Dropdown.Item id="priority" href="#filterpriority" onClick={(e) => this.setDisplay(e)}>Priority</Dropdown.Item>
+            <Dropdown.Item id="type" href="#filtertype" onClick={(e) => this.setDisplay(e)}>Fault type</Dropdown.Item>
+          </NavDropdown>
           <ScaleControl/>
           <Image className="satellite" src={this.state.osmThumbnail} onClick={(e) => this.toogleMap(e)} thumbnail={true}/>
           <LayersControl position="topright">
@@ -667,6 +714,19 @@ class App extends React.Component {
           
       </Map>   
       </div>
+      <Modal className="filterModal" show={this.state.filter} size={'lg'} centered={true}>
+        <Modal.Header>
+          <Modal.Title>Filter</Modal.Title>
+        </Modal.Header>
+        <Modal.Body >	
+
+		    </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" type="submit" onClick={(e) => this.closeFilter(e)}>
+            Filter
+            </Button>
+        </Modal.Footer>
+      </Modal>
       <Modal className="termsModal" show={this.state.showTerms} size={'md'} centered={true}>
         <Modal.Header>
           <Modal.Title><h2>Road Inspection Viewer</h2></Modal.Title>
