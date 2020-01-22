@@ -1,6 +1,6 @@
 import React from 'react';
 import { Map, TileLayer, Marker, Polyline, Popup, ScaleControl, LayersControl, LayerGroup}  from 'react-leaflet';
-import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form, Dropdown}  from 'react-bootstrap';
+import {Navbar, Nav, NavDropdown, Modal, Button, Image, Form, Dropdown, Table, Pagination}  from 'react-bootstrap';
 import L from 'leaflet';
 import './App.css';
 import Cookies from 'js-cookie';
@@ -59,7 +59,9 @@ class App extends React.Component {
       user: null,
       passowrd: null,
       projectArr: projects,
-      class: []
+      faultClass: [],
+      faultTypes: [],
+      pageActive: 0
     };
     
   }
@@ -373,8 +375,10 @@ class App extends React.Component {
       Cookies.set('user', body.user, { expires: 7 })
       this.setState({login: body.user});
       this.setState({token: body.token});
-      this.setState({loginModal: (e) => this.logout(e)});      
+      this.setState({loginModal: (e) => this.logout(e)}); 
+      console.log(body.projects);     
       this.buildProjects(body.projects);
+      //this.setState({projectArr: body.projects});
       
     } else {
       console.log("Login failed");
@@ -384,14 +388,17 @@ class App extends React.Component {
   buildProjects(projects) {
     let prj = []
     for(var i = 0; i < projects.length; i += 1) {
-      prj.push(projects[i].description + " " + projects[i].date);
+      //prj.push(projects[i].description + " " + projects[i].date);
+      prj.push(projects[i]);
     }
+    //console.log("projects:" + JSON.parse(projects[0]))
     Cookies.set('projects', JSON.stringify(prj), { expires: 7 })
     this.setState({projectArr: prj});
   }
 
   async loadLayer(e) {
-    console.log("token: " + this.state.token);
+    console.log(e.target.attributes);
+    console.log(e.target.attributes.code.value);
     if (this.state.login !== "Login") {
         const response = await fetch('http://' + this.state.host + '/layer', {
         method: 'POST',
@@ -401,8 +408,8 @@ class App extends React.Component {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          menu: e.target.id,
-          user: this.state.login
+          user: this.state.login,
+          project: e.target.attributes.code.value   
         })
       })
       if (response.status !== 200) {
@@ -413,6 +420,10 @@ class App extends React.Component {
     } else {
       
     }    
+  }
+
+  async filterLayer(e) {
+
   }
 
   async loadCentreline(e) {
@@ -444,7 +455,7 @@ class App extends React.Component {
 
   async loadFilters() {
     if (this.state.login !== "Login") {
-      const response = await fetch('http://' + this.state.host + '/filter', {
+      const response = await fetch('http://' + this.state.host + '/class', {
         method: 'POST',
         headers: {
           "authorization": this.state.token,
@@ -460,9 +471,34 @@ class App extends React.Component {
       } 
       const classes = await response.json();
       console.log(classes);
-      this.setState({class: classes});
+      this.setState({faultClass: classes});
       //classes.map(classes => console.log(classes.description));
+      //classes.map(classes => this.getFaultTypes(classes.description));
+      this.getFaultTypes(this.state.faultClass[0].code);
+    }
+  }
 
+  async getFaultTypes(cls) {
+    console.log("type: " + cls);
+    if (this.state.login !== "Login") {
+      const response = await fetch('http://' + this.state.host + '/faults', {
+        method: 'POST',
+        headers: {
+          "authorization": this.state.token,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user: this.state.login,
+          type: cls
+        })
+      })
+      if (response.status !== 200) {
+        console.log(response.status);
+      } 
+      const faults = await response.json();
+      console.log(faults);
+      this.setState({faultTypes: faults});
     }
   }
 
@@ -488,8 +524,14 @@ class App extends React.Component {
     this.setState({showTerms: false});    
   }
 
+  clickPage(index) {
+    console.log(index);
+    this.setState({pageActive: index});
+    this.getFaultTypes(this.state.faultClass[index].code);
+  }
+
   closeFilter() {
-    this.setState({filter: false});
+    this.setState({pageActive: false});
   }
   /**
    * called when photoviewer closed
@@ -597,17 +639,27 @@ class App extends React.Component {
         return (        
           <NavDropdown title="Add Layers" className="navdropdownitem" drop="right">
           {props.projects.map((value, index) =>      
-          <NavDropdown.Item className="navdropdownitem"
-          key={`${index}`}
-          index={index}
-          title={value} onClick={(e) => loadLayer(e)}>
-            {value}
-          </NavDropdown.Item>)}
+            <NavDropdown.Item className="navdropdownitem"
+              key={`${index}`}
+              index={index}
+              title={value.code}
+              code={value.code}
+              onClick={(e) => loadLayer(e)}>
+                {value.description + " " + value.date}
+            </NavDropdown.Item>
+          )}
           <NavDropdown.Divider />
           </NavDropdown>
           );
       }
     }
+
+    const CustomRow = function(props) {
+      const data = props.data;
+
+    }
+
+    const { currentPage } = this.state.pageActive;
 
     return (
       <>     
@@ -716,10 +768,37 @@ class App extends React.Component {
       </div>
       <Modal className="filterModal" show={this.state.filter} size={'lg'} centered={true}>
         <Modal.Header>
-          <Modal.Title>Filter</Modal.Title>
+          <Modal.Title>Filter</Modal.Title><br></br>
+          <Pagination size="sm">
+            {this.state.faultClass.map((value, index) => 
+                  
+                    <Pagination.Item  key={`${index}`} className={"page-item"} active={index === this.state.pageActive} onClick={() => this.clickPage(index)}>{value.description}
+                  </Pagination.Item>
+                  
+            )}
+          </Pagination>
         </Modal.Header>
         <Modal.Body >	
-
+       
+        <Table size="sm" striped bordered hover>
+          <thead>
+          
+            </thead> 
+            <tbody>
+            
+            {this.state.faultTypes.map((value, index) => 
+                <tr className='tablerow' key={`${index}`}>
+                
+                    <td> 
+                    
+                    <input type="checkbox" unchecked="true"/> {value.fault}
+                    </td>
+               
+                </tr>
+                 )}
+            </tbody>
+            
+          </Table>
 		    </Modal.Body>
         <Modal.Footer>
           <Button variant="primary" type="submit" onClick={(e) => this.closeFilter(e)}>
